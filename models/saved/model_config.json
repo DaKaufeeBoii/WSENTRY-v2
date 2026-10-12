@@ -1,0 +1,14 @@
+{
+  "n_features": 20,
+  "n_classes": 5,
+  "hidden_dim": 128,
+  "time_steps": 5,
+  "dataset_name": "wsn",
+  "classes": [
+    "Normal",
+    "Jamming",
+    "Spoofing",
+    "DoS_Flood",
+    "Intrusion_Probe"
+  ]
+}

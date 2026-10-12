@@ -1,0 +1,430 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>W-SENTRY Architecture Diagram</title>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    
+    body {
+      font-family: 'JetBrains Mono', monospace;
+      background: #020617;
+      min-height: 100vh;
+      padding: 2rem;
+      color: white;
+    }
+    
+    .container {
+      max-width: 1400px;
+      margin: 0 auto;
+    }
+    
+    .header {
+      margin-bottom: 2rem;
+    }
+    
+    .header-row {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      margin-bottom: 0.5rem;
+    }
+    
+    .pulse-dot {
+      width: 12px;
+      height: 12px;
+      background: #22d3ee;
+      border-radius: 50%;
+      animation: pulse 2s infinite;
+    }
+    
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.5; }
+    }
+    
+    h1 {
+      font-size: 1.5rem;
+      font-weight: 700;
+      letter-spacing: -0.025em;
+    }
+    
+    .subtitle {
+      color: #94a3b8;
+      font-size: 0.875rem;
+      margin-left: 1.75rem;
+    }
+    
+    .diagram-container {
+      background: rgba(15, 23, 42, 0.5);
+      border-radius: 1rem;
+      border: 1px solid #1e293b;
+      padding: 1.5rem;
+      overflow-x: auto;
+    }
+    
+    svg {
+      width: 100%;
+      min-width: 1200px;
+      display: block;
+    }
+    
+    .cards {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 1rem;
+      margin-top: 2rem;
+    }
+    
+    .card {
+      background: rgba(15, 23, 42, 0.5);
+      border-radius: 0.75rem;
+      border: 1px solid #1e293b;
+      padding: 1.25rem;
+    }
+    
+    .card-header {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      margin-bottom: 0.75rem;
+    }
+    
+    .card-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+    }
+    
+    .card-dot.cyan { background: #22d3ee; }
+    .card-dot.emerald { background: #34d399; }
+    .card-dot.violet { background: #a78bfa; }
+    .card-dot.amber { background: #fbbf24; }
+    .card-dot.rose { background: #fb7185; }
+    
+    .card h3 {
+      font-size: 0.875rem;
+      font-weight: 600;
+    }
+    
+    .card ul {
+      list-style: none;
+      color: #94a3b8;
+      font-size: 0.75rem;
+    }
+    
+    .card li {
+      margin-bottom: 0.375rem;
+    }
+    
+    .footer {
+      text-align: center;
+      margin-top: 1.5rem;
+      color: #475569;
+      font-size: 0.75rem;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <!-- Header -->
+    <div class="header">
+      <div class="header-row">
+        <div class="pulse-dot"></div>
+        <h1>W-SENTRY System Architecture</h1>
+      </div>
+      <p class="subtitle">Cross-Domain Wireless Intrusion Detection with Domain Adversarial Neural Networks</p>
+    </div>
+
+    <!-- Main Diagram -->
+    <div class="diagram-container">
+      <svg viewBox="0 0 1300 900">
+        <!-- Definitions -->
+        <defs>
+          <marker id="arrowhead" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+            <polygon points="0 0, 10 3.5, 0 7" fill="#64748b" />
+          </marker>
+          <marker id="arrowhead-emerald" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+            <polygon points="0 0, 10 3.5, 0 7" fill="#34d399" />
+          </marker>
+          <marker id="arrowhead-violet" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+            <polygon points="0 0, 10 3.5, 0 7" fill="#a78bfa" />
+          </marker>
+          <marker id="arrowhead-rose" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+            <polygon points="0 0, 10 3.5, 0 7" fill="#fb7185" />
+          </marker>
+          <pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse">
+            <path d="M 40 0 L 0 0 0 40" fill="none" stroke="#1e293b" stroke-width="0.5"/>
+          </pattern>
+        </defs>
+
+        <!-- Background Grid -->
+        <rect width="100%" height="100%" fill="url(#grid)" />
+
+        <!-- ===== DATA LAYER (TOP) ===== -->
+        <text x="650" y="35" fill="#94a3b8" font-size="11" font-weight="600" text-anchor="middle">DATA SOURCES</text>
+
+        <!-- WSN-DS Dataset -->
+        <rect x="40" y="55" width="140" height="85" rx="6" fill="#0f172a"/>
+        <rect x="40" y="55" width="140" height="85" rx="6" fill="rgba(30, 41, 59, 0.5)" stroke="#94a3b8" stroke-width="1.5"/>
+        <text x="110" y="77" fill="white" font-size="11" font-weight="600" text-anchor="middle">WSN-DS</text>
+        <text x="110" y="93" fill="#94a3b8" font-size="8" text-anchor="middle">374K samples</text>
+        <text x="110" y="106" fill="#94a3b8" font-size="8" text-anchor="middle">14 routing features</text>
+        <text x="110" y="119" fill="#94a3b8" font-size="8" text-anchor="middle">5 attack types</text>
+        <text x="110" y="132" fill="#64748b" font-size="7" text-anchor="middle">Wireless Sensor Networks</text>
+
+        <!-- CIC-IoT-2023 Dataset -->
+        <rect x="220" y="55" width="140" height="85" rx="6" fill="#0f172a"/>
+        <rect x="220" y="55" width="140" height="85" rx="6" fill="rgba(30, 41, 59, 0.5)" stroke="#94a3b8" stroke-width="1.5"/>
+        <text x="290" y="77" fill="white" font-size="11" font-weight="600" text-anchor="middle">CIC-IoT-2023</text>
+        <text x="290" y="93" fill="#94a3b8" font-size="8" text-anchor="middle">1.05M samples</text>
+        <text x="290" y="106" fill="#94a3b8" font-size="8" text-anchor="middle">48 flow features</text>
+        <text x="290" y="119" fill="#94a3b8" font-size="8" text-anchor="middle">9 attack classes</text>
+        <text x="290" y="132" fill="#64748b" font-size="7" text-anchor="middle">IoT Network Traffic</text>
+
+        <!-- Edge-IIoTset Dataset -->
+        <rect x="400" y="55" width="140" height="85" rx="6" fill="#0f172a"/>
+        <rect x="400" y="55" width="140" height="85" rx="6" fill="rgba(30, 41, 59, 0.5)" stroke="#94a3b8" stroke-width="1.5"/>
+        <text x="470" y="77" fill="white" font-size="11" font-weight="600" text-anchor="middle">Edge-IIoTset</text>
+        <text x="470" y="93" fill="#94a3b8" font-size="8" text-anchor="middle">50K samples</text>
+        <text x="470" y="106" fill="#94a3b8" font-size="8" text-anchor="middle">35 protocol features</text>
+        <text x="470" y="119" fill="#94a3b8" font-size="8" text-anchor="middle">15 attack types</text>
+        <text x="470" y="132" fill="#64748b" font-size="7" text-anchor="middle">Industrial Edge Networks</text>
+
+        <!-- Live Capture (optional fourth source) -->
+        <rect x="580" y="55" width="140" height="85" rx="6" fill="#0f172a"/>
+        <rect x="580" y="55" width="140" height="85" rx="6" fill="rgba(8, 51, 68, 0.4)" stroke="#22d3ee" stroke-width="1.5"/>
+        <text x="650" y="77" fill="white" font-size="11" font-weight="600" text-anchor="middle">Live Capture</text>
+        <text x="650" y="93" fill="#94a3b8" font-size="8" text-anchor="middle">Scapy / Tshark</text>
+        <text x="650" y="106" fill="#94a3b8" font-size="8" text-anchor="middle">5-second windows</text>
+        <text x="650" y="119" fill="#94a3b8" font-size="8" text-anchor="middle">Real-time inference</text>
+        <text x="650" y="132" fill="#22d3ee" font-size="7" text-anchor="middle">802.11 / Ethernet</text>
+
+        <!-- Arrows from datasets to feature extraction -->
+        <line x1="110" y1="142" x2="110" y2="195" stroke="#64748b" stroke-width="1.5" marker-end="url(#arrowhead)"/>
+        <line x1="290" y1="142" x2="290" y2="195" stroke="#64748b" stroke-width="1.5" marker-end="url(#arrowhead)"/>
+        <line x1="470" y1="142" x2="470" y2="195" stroke="#64748b" stroke-width="1.5" marker-end="url(#arrowhead)"/>
+        <line x1="650" y1="142" x2="650" y2="195" stroke="#22d3ee" stroke-width="1.5" marker-end="url(#arrowhead)"/>
+
+        <!-- ===== FEATURE EXTRACTION LAYER ===== -->
+        <text x="380" y="185" fill="#94a3b8" font-size="11" font-weight="600" text-anchor="middle">FEATURE EXTRACTION</text>
+
+        <!-- Two-track feature box -->
+        <rect x="40" y="200" width="680" height="120" rx="8" fill="rgba(6, 78, 59, 0.15)" stroke="#34d399" stroke-width="1" stroke-dasharray="4,4"/>
+        <text x="50" y="215" fill="#34d399" font-size="9" font-weight="600">Dual-Track Feature Engineering</text>
+
+        <!-- Native Features Track -->
+        <rect x="60" y="225" width="200" height="80" rx="6" fill="#0f172a"/>
+        <rect x="60" y="225" width="200" height="80" rx="6" fill="rgba(6, 78, 59, 0.4)" stroke="#34d399" stroke-width="1.5"/>
+        <text x="160" y="243" fill="white" font-size="10" font-weight="600" text-anchor="middle">Native Features</text>
+        <text x="160" y="260" fill="#94a3b8" font-size="8" text-anchor="middle">Dataset-specific columns</text>
+        <text x="160" y="273" fill="#94a3b8" font-size="8" text-anchor="middle">WSN: routing metrics</text>
+        <text x="160" y="286" fill="#94a3b8" font-size="8" text-anchor="middle">CIC: flow statistics</text>
+        <text x="160" y="299" fill="#94a3b8" font-size="8" text-anchor="middle">Edge: TCP/IP headers</text>
+
+        <!-- Behavioral Features Track -->
+        <rect x="290" y="225" width="200" height="80" rx="6" fill="#0f172a"/>
+        <rect x="290" y="225" width="200" height="80" rx="6" fill="rgba(6, 78, 59, 0.4)" stroke="#34d399" stroke-width="1.5"/>
+        <text x="390" y="243" fill="white" font-size="10" font-weight="600" text-anchor="middle">Behavioral Features</text>
+        <text x="390" y="260" fill="#94a3b8" font-size="8" text-anchor="middle">Protocol-agnostic metrics</text>
+        <text x="390" y="273" fill="#94a3b8" font-size="8" text-anchor="middle">20 common features:</text>
+        <text x="390" y="286" fill="#94a3b8" font-size="8" text-anchor="middle">pkt_rate, iat_mean,</text>
+        <text x="390" y="299" fill="#94a3b8" font-size="8" text-anchor="middle">burst_ratio, entropy...</text>
+
+        <!-- Log Normalization Box -->
+        <rect x="520" y="225" width="180" height="80" rx="6" fill="#0f172a"/>
+        <rect x="520" y="225" width="180" height="80" rx="6" fill="rgba(136, 19, 55, 0.4)" stroke="#fb7185" stroke-width="1.5"/>
+        <text x="610" y="243" fill="white" font-size="10" font-weight="600" text-anchor="middle">Preprocessing</text>
+        <text x="610" y="260" fill="#94a3b8" font-size="8" text-anchor="middle">Log Normalization</text>
+        <text x="610" y="273" fill="#94a3b8" font-size="8" text-anchor="middle">sign(X) × log(1+|X|)</text>
+        <text x="610" y="286" fill="#94a3b8" font-size="8" text-anchor="middle">RobustScaler</text>
+        <text x="610" y="299" fill="#fb7185" font-size="7" text-anchor="middle">+37.6pp accuracy gain</text>
+
+        <!-- Arrows to model layer -->
+        <line x1="160" y1="307" x2="250" y2="365" stroke="#34d399" stroke-width="1.5" marker-end="url(#arrowhead-emerald)"/>
+        <line x1="390" y1="307" x2="390" y2="365" stroke="#34d399" stroke-width="1.5" marker-end="url(#arrowhead-emerald)"/>
+        <line x1="610" y1="307" x2="530" y2="365" stroke="#fb7185" stroke-width="1.5" marker-end="url(#arrowhead-rose)"/>
+
+        <!-- ===== MODEL LAYER ===== -->
+        <text x="650" y="355" fill="#94a3b8" font-size="11" font-weight="600" text-anchor="middle">DEEP LEARNING MODELS</text>
+
+        <!-- Hybrid CNN-BiLSTM-Attention -->
+        <rect x="150" y="370" width="300" height="140" rx="8" fill="#0f172a"/>
+        <rect x="150" y="370" width="300" height="140" rx="8" fill="rgba(76, 29, 149, 0.4)" stroke="#a78bfa" stroke-width="1.5"/>
+        <text x="300" y="390" fill="white" font-size="12" font-weight="600" text-anchor="middle">Hybrid CNN-BiLSTM-Attention</text>
+        
+        <text x="300" y="410" fill="#94a3b8" font-size="9" text-anchor="middle">Input: (batch, T=5, features)</text>
+        
+        <text x="170" y="430" fill="#a78bfa" font-size="8" font-weight="600">CNN Block:</text>
+        <text x="170" y="443" fill="#94a3b8" font-size="8">  Conv1D: 15→32→64</text>
+        <text x="170" y="456" fill="#94a3b8" font-size="8">  BatchNorm + ReLU</text>
+        
+        <text x="170" y="474" fill="#a78bfa" font-size="8" font-weight="600">BiLSTM:</text>
+        <text x="170" y="487" fill="#94a3b8" font-size="8">  2 layers, 128 units</text>
+        
+        <text x="170" y="502" fill="#94a3b8" font-size="7">→ Self-Attention → Dense(256→128→5)</text>
+
+        <!-- DANN Domain Adversarial -->
+        <rect x="490" y="370" width="280" height="140" rx="8" fill="#0f172a"/>
+        <rect x="490" y="370" width="280" height="140" rx="8" fill="rgba(251, 146, 60, 0.3)" stroke="#fb923c" stroke-width="1.5"/>
+        <text x="630" y="390" fill="white" font-size="12" font-weight="600" text-anchor="middle">DANN (Domain Adversarial)</text>
+        
+        <text x="630" y="410" fill="#94a3b8" font-size="9" text-anchor="middle">Multi-domain transfer learning</text>
+        
+        <text x="510" y="430" fill="#fb923c" font-size="8" font-weight="600">Feature Extractor:</text>
+        <text x="510" y="443" fill="#94a3b8" font-size="8">  Shared CNN-BiLSTM backbone</text>
+        
+        <text x="510" y="461" fill="#fb923c" font-size="8" font-weight="600">Threat Classifier (5 classes):</text>
+        <text x="510" y="474" fill="#94a3b8" font-size="8">  Normal, DoS, Intrusion,</text>
+        <text x="510" y="487" fill="#94a3b8" font-size="8">  Spoofing, Jamming</text>
+        
+        <text x="510" y="502" fill="#94a3b8" font-size="7">→ Gradient Reversal → Domain Disc. (3 domains)</text>
+
+        <!-- Training info box -->
+        <rect x="810" y="370" width="180" height="140" rx="6" fill="#0f172a"/>
+        <rect x="810" y="370" width="180" height="140" rx="6" fill="rgba(8, 51, 68, 0.4)" stroke="#22d3ee" stroke-width="1.5"/>
+        <text x="900" y="390" fill="white" font-size="10" font-weight="600" text-anchor="middle">Training Details</text>
+        <text x="900" y="410" fill="#94a3b8" font-size="8" text-anchor="middle">RTX 3050 (6GB VRAM)</text>
+        <text x="900" y="425" fill="#94a3b8" font-size="8" text-anchor="middle">PyTorch 2.6.0 CUDA 12.8</text>
+        <text x="900" y="440" fill="#94a3b8" font-size="8" text-anchor="middle">Batch: 256, LR: 1e-3</text>
+        <text x="900" y="455" fill="#94a3b8" font-size="8" text-anchor="middle">Early stopping (patience=7)</text>
+        <text x="900" y="470" fill="#94a3b8" font-size="8" text-anchor="middle">Class-weighted loss</text>
+        <text x="900" y="485" fill="#94a3b8" font-size="8" text-anchor="middle">Temperature calibration</text>
+        <text x="900" y="500" fill="#22d3ee" font-size="7" text-anchor="middle">~3 min/epoch on GPU</text>
+
+        <!-- Arrows to output layer -->
+        <line x1="300" y1="512" x2="300" y2="575" stroke="#a78bfa" stroke-width="1.5" marker-end="url(#arrowhead-violet)"/>
+        <line x1="630" y1="512" x2="630" y2="575" stroke="#fb923c" stroke-width="1.5" marker-end="url(#arrowhead)"/>
+
+        <!-- ===== OUTPUT LAYER ===== -->
+        <text x="450" y="565" fill="#94a3b8" font-size="11" font-weight="600" text-anchor="middle">DETECTION & MITIGATION</text>
+
+        <!-- Threat Detection Output -->
+        <rect x="150" y="580" width="300" height="100" rx="6" fill="#0f172a"/>
+        <rect x="150" y="580" width="300" height="100" rx="6" fill="rgba(6, 78, 59, 0.4)" stroke="#34d399" stroke-width="1.5"/>
+        <text x="300" y="600" fill="white" font-size="11" font-weight="600" text-anchor="middle">Threat Classification</text>
+        <text x="300" y="620" fill="#94a3b8" font-size="9" text-anchor="middle">Results (Same-Dataset):</text>
+        <text x="300" y="635" fill="#94a3b8" font-size="8" text-anchor="middle">WSN-DS: 98.1%  |  CIC-IoT: 97.8%</text>
+        <text x="300" y="650" fill="#94a3b8" font-size="8" text-anchor="middle">Edge-IIoT: 94.4% (vs 56.8% w/o log)</text>
+        <text x="300" y="665" fill="#34d399" font-size="7" text-anchor="middle">Cross-dataset transfer: 61-86%</text>
+
+        <!-- Mitigation Engine -->
+        <rect x="490" y="580" width="280" height="100" rx="6" fill="#0f172a"/>
+        <rect x="490" y="580" width="280" height="100" rx="6" fill="rgba(136, 19, 55, 0.4)" stroke="#fb7185" stroke-width="1.5"/>
+        <text x="630" y="600" fill="white" font-size="11" font-weight="600" text-anchor="middle">Mitigation Engine</text>
+        <text x="630" y="620" fill="#94a3b8" font-size="8" text-anchor="middle">Automated Response Actions:</text>
+        <text x="630" y="635" fill="#94a3b8" font-size="8" text-anchor="middle">• Firewall rules (iptables/netsh)</text>
+        <text x="630" y="650" fill="#94a3b8" font-size="8" text-anchor="middle">• IP blacklisting (cooldown 5min)</text>
+        <text x="630" y="665" fill="#fb7185" font-size="7" text-anchor="middle">Real + Simulated modes</text>
+
+        <!-- Dashboard / Monitoring -->
+        <rect x="810" y="580" width="180" height="100" rx="6" fill="#0f172a"/>
+        <rect x="810" y="580" width="180" height="100" rx="6" fill="rgba(8, 51, 68, 0.4)" stroke="#22d3ee" stroke-width="1.5"/>
+        <text x="900" y="600" fill="white" font-size="11" font-weight="600" text-anchor="middle">Dashboard</text>
+        <text x="900" y="620" fill="#94a3b8" font-size="8" text-anchor="middle">Streamlit SOC Interface</text>
+        <text x="900" y="635" fill="#94a3b8" font-size="8" text-anchor="middle">• Live threat monitor</text>
+        <text x="900" y="650" fill="#94a3b8" font-size="8" text-anchor="middle">• Transfer matrix viz</text>
+        <text x="900" y="665" fill="#94a3b8" font-size="8" text-anchor="middle">• ROC/AUC curves</text>
+
+        <!-- ===== LEGEND ===== -->
+        <text x="100" y="730" fill="white" font-size="10" font-weight="600">Legend</text>
+        
+        <rect x="100" y="742" width="16" height="10" rx="2" fill="#0f172a"/>
+        <rect x="100" y="742" width="16" height="10" rx="2" fill="rgba(30, 41, 59, 0.5)" stroke="#94a3b8" stroke-width="1"/>
+        <text x="122" y="750" fill="#94a3b8" font-size="8">Dataset Source</text>
+        
+        <rect x="100" y="758" width="16" height="10" rx="2" fill="#0f172a"/>
+        <rect x="100" y="758" width="16" height="10" rx="2" fill="rgba(6, 78, 59, 0.4)" stroke="#34d399" stroke-width="1"/>
+        <text x="122" y="766" fill="#94a3b8" font-size="8">Feature Engineering</text>
+        
+        <rect x="100" y="774" width="16" height="10" rx="2" fill="#0f172a"/>
+        <rect x="100" y="774" width="16" height="10" rx="2" fill="rgba(76, 29, 149, 0.4)" stroke="#a78bfa" stroke-width="1"/>
+        <text x="122" y="782" fill="#94a3b8" font-size="8">Deep Learning Model</text>
+        
+        <rect x="100" y="790" width="16" height="10" rx="2" fill="#0f172a"/>
+        <rect x="100" y="790" width="16" height="10" rx="2" fill="rgba(136, 19, 55, 0.4)" stroke="#fb7185" stroke-width="1"/>
+        <text x="122" y="798" fill="#94a3b8" font-size="8">Security / Mitigation</text>
+        
+        <rect x="100" y="806" width="16" height="10" rx="2" fill="#0f172a"/>
+        <rect x="100" y="806" width="16" height="10" rx="2" fill="rgba(8, 51, 68, 0.4)" stroke="#22d3ee" stroke-width="1"/>
+        <text x="122" y="814" fill="#94a3b8" font-size="8">Frontend / Monitoring</text>
+        
+        <rect x="100" y="822" width="16" height="10" rx="2" fill="#0f172a"/>
+        <rect x="100" y="822" width="16" height="10" rx="2" fill="rgba(251, 146, 60, 0.3)" stroke="#fb923c" stroke-width="1"/>
+        <text x="122" y="830" fill="#94a3b8" font-size="8">Domain Adaptation</text>
+
+        <rect x="260" y="742" width="16" height="10" rx="2" fill="transparent" stroke="#34d399" stroke-width="1" stroke-dasharray="3,3"/>
+        <text x="282" y="750" fill="#94a3b8" font-size="8">Two-track System Boundary</text>
+        
+        <line x1="260" y1="764" x2="276" y2="764" stroke="#fb7185" stroke-width="1.5" stroke-dasharray="5,5"/>
+        <text x="282" y="767" fill="#94a3b8" font-size="8">Preprocessing Flow</text>
+
+        <!-- Performance metrics box -->
+        <rect x="420" y="730" width="350" height="105" rx="6" fill="rgba(15, 23, 42, 0.3)" stroke="#22d3ee" stroke-width="1"/>
+        <text x="595" y="748" fill="#22d3ee" font-size="10" font-weight="600" text-anchor="middle">Key Performance Metrics</text>
+        
+        <text x="440" y="768" fill="#94a3b8" font-size="8">Same-Dataset Accuracy:</text>
+        <text x="440" y="782" fill="#34d399" font-size="8">  WSN: 98.1%  |  CIC: 97.8%  |  Edge: 94.4%</text>
+        
+        <text x="440" y="800" fill="#94a3b8" font-size="8">Cross-Dataset Transfer (Behavioral):</text>
+        <text x="440" y="814" fill="#fb923c" font-size="8">  WSN→Edge: 80.7%  |  Edge→CIC: 61.8%</text>
+        
+        <text x="440" y="829" fill="#94a3b8" font-size="8">DANN 2-Domain (CIC+Edge): 96.5% / 96.3%</text>
+      </svg>
+    </div>
+
+    <!-- Info Cards -->
+    <div class="cards">
+      <div class="card">
+        <div class="card-header">
+          <div class="card-dot violet"></div>
+          <h3>Core Innovation</h3>
+        </div>
+        <ul>
+          <li>• Two-track feature system: native + behavioral</li>
+          <li>• Log normalization handles billion-range values</li>
+          <li>• DANN closes 85% of cross-dataset gap</li>
+          <li>• First 3×3 transfer matrix (WSN/CIC/Edge)</li>
+        </ul>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <div class="card-dot emerald"></div>
+          <h3>Technical Stack</h3>
+        </div>
+        <ul>
+          <li>• PyTorch 2.6.0 with CUDA 12.8</li>
+          <li>• CNN-BiLSTM-Attention hybrid architecture</li>
+          <li>• Gradient reversal for domain adaptation</li>
+          <li>• Temperature scaling calibration</li>
+        </ul>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <div class="card-dot rose"></div>
+          <h3>Deployment</h3>
+        </div>
+        <ul>
+          <li>• Real-time capture via Scapy (5-sec windows)</li>
+          <li>• Streamlit dashboard with 6 SOC tabs</li>
+          <li>• Automated mitigation (firewall + blacklist)</li>
+          <li>• Attack simulation scripts (hping3, nmap)</li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- Footer -->
+    <p class="footer">
+      W-SENTRY • Cross-Domain Wireless IDS • KG Reddy College of Engineering • 2026-27
+    </p>
+  </div>
+</body>
+</html>

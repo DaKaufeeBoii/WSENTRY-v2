@@ -1,0 +1,237 @@
+{
+  "same_dataset": {
+    "RF_WSN-DS": {
+      "model_name": "RF_WSN-DS",
+      "accuracy": 99.6,
+      "precision": 99.6,
+      "recall": 99.6,
+      "f1": 99.6,
+      "far": 0.29,
+      "confusion_matrix": [
+        [
+          67818,
+          67,
+          65,
+          64
+        ],
+        [
+          93,
+          1233,
+          2,
+          0
+        ],
+        [
+          9,
+          0,
+          4920,
+          0
+        ],
+        [
+          2,
+          0,
+          0,
+          660
+        ]
+      ],
+      "report": "              precision    recall  f1-score   support\n\n           0       1.00      1.00      1.00     68014\n           1       0.95      0.93      0.94      1328\n           2       0.99      1.00      0.99      4929\n           3       0.91      1.00      0.95       662\n\n    accuracy                           1.00     74933\n   macro avg       0.96      0.98      0.97     74933\nweighted avg       1.00      1.00      1.00     74933\n",
+      "train_time_s": 117.16,
+      "inference_time_s": 0.9435
+    },
+    "XGB_WSN-DS": {
+      "model_name": "XGB_WSN-DS",
+      "accuracy": 99.56,
+      "precision": 99.57,
+      "recall": 99.56,
+      "f1": 99.57,
+      "far": 0.33,
+      "confusion_matrix": [
+        [
+          67792,
+          36,
+          117,
+          69
+        ],
+        [
+          95,
+          1231,
+          2,
+          0
+        ],
+        [
+          5,
+          2,
+          4922,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          662
+        ]
+      ],
+      "report": "              precision    recall  f1-score   support\n\n           0       1.00      1.00      1.00     68014\n           1       0.97      0.93      0.95      1328\n           2       0.98      1.00      0.99      4929\n           3       0.91      1.00      0.95       662\n\n    accuracy                           1.00     74933\n   macro avg       0.96      0.98      0.97     74933\nweighted avg       1.00      1.00      1.00     74933\n",
+      "train_time_s": 24.87,
+      "inference_time_s": 0.2284
+    },
+    "RF_CIC-IoT": {
+      "model_name": "RF_CIC-IoT",
+      "accuracy": 99.42,
+      "precision": 99.43,
+      "recall": 99.42,
+      "f1": 99.42,
+      "far": 8.24,
+      "confusion_matrix": [
+        [
+          857,
+          46,
+          0,
+          31
+        ],
+        [
+          50,
+          334,
+          0,
+          37
+        ],
+        [
+          0,
+          0,
+          38301,
+          6
+        ],
+        [
+          35,
+          21,
+          4,
+          275
+        ]
+      ],
+      "report": "              precision    recall  f1-score   support\n\n           0       0.91      0.92      0.91       934\n           2       0.83      0.79      0.81       421\n           3       1.00      1.00      1.00     38307\n           4       0.79      0.82      0.80       335\n\n    accuracy                           0.99     39997\n   macro avg       0.88      0.88      0.88     39997\nweighted avg       0.99      0.99      0.99     39997\n",
+      "train_time_s": 32.79,
+      "inference_time_s": 0.457
+    },
+    "XGB_CIC-IoT": {
+      "model_name": "XGB_CIC-IoT",
+      "accuracy": 99.44,
+      "precision": 99.45,
+      "recall": 99.44,
+      "f1": 99.44,
+      "far": 9.31,
+      "confusion_matrix": [
+        [
+          847,
+          56,
+          0,
+          31
+        ],
+        [
+          39,
+          345,
+          0,
+          37
+        ],
+        [
+          0,
+          4,
+          38295,
+          8
+        ],
+        [
+          35,
+          13,
+          2,
+          285
+        ]
+      ],
+      "report": "              precision    recall  f1-score   support\n\n           0       0.92      0.91      0.91       934\n           2       0.83      0.82      0.82       421\n           3       1.00      1.00      1.00     38307\n           4       0.79      0.85      0.82       335\n\n    accuracy                           0.99     39997\n   macro avg       0.88      0.89      0.89     39997\nweighted avg       0.99      0.99      0.99     39997\n",
+      "train_time_s": 35.41,
+      "inference_time_s": 0.1192
+    },
+    "RF_Edge-IIoT": {
+      "model_name": "RF_Edge-IIoT",
+      "accuracy": 92.06,
+      "precision": 97.76,
+      "recall": 92.06,
+      "f1": 94.25,
+      "far": 0.59,
+      "confusion_matrix": [
+        [
+          28948,
+          108,
+          1,
+          64
+        ],
+        [
+          0,
+          22,
+          0,
+          0
+        ],
+        [
+          0,
+          2298,
+          3463,
+          331
+        ],
+        [
+          1,
+          79,
+          294,
+          4390
+        ]
+      ],
+      "report": "              precision    recall  f1-score   support\n\n           0       1.00      0.99      1.00     29121\n           2       0.01      1.00      0.02        22\n           3       0.92      0.57      0.70      6092\n           4       0.92      0.92      0.92      4764\n\n    accuracy                           0.92     39999\n   macro avg       0.71      0.87      0.66     39999\nweighted avg       0.98      0.92      0.94     39999\n",
+      "train_time_s": 10.4,
+      "inference_time_s": 0.5565
+    },
+    "XGB_Edge-IIoT": {
+      "model_name": "XGB_Edge-IIoT",
+      "accuracy": 91.92,
+      "precision": 97.74,
+      "recall": 91.92,
+      "f1": 94.01,
+      "far": 0.58,
+      "confusion_matrix": [
+        [
+          28953,
+          108,
+          0,
+          60
+        ],
+        [
+          0,
+          22,
+          0,
+          0
+        ],
+        [
+          0,
+          2298,
+          3332,
+          462
+        ],
+        [
+          1,
+          79,
+          224,
+          4460
+        ]
+      ],
+      "report": "              precision    recall  f1-score   support\n\n           0       1.00      0.99      1.00     29121\n           2       0.01      1.00      0.02        22\n           3       0.94      0.55      0.69      6092\n           4       0.90      0.94      0.92      4764\n\n    accuracy                           0.92     39999\n   macro avg       0.71      0.87      0.66     39999\nweighted avg       0.98      0.92      0.94     39999\n",
+      "train_time_s": 26.19,
+      "inference_time_s": 0.374
+    }
+  },
+  "transfer_matrix": {
+    "WSN\u2192WSN": 99.6,
+    "WSN\u2192CIC": 0.18,
+    "WSN\u2192Edge": 11.94,
+    "CIC\u2192WSN": 1.26,
+    "CIC\u2192CIC": 99.42,
+    "CIC\u2192Edge": 26.3,
+    "Edge\u2192WSN": 1.9,
+    "Edge\u2192CIC": 67.64,
+    "Edge\u2192Edge": 92.06
+  }
+}
