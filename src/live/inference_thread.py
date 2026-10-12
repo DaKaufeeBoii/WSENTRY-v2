@@ -4,7 +4,7 @@ Background daemon thread for real-time batched model inference and mitigation tr
 import logging
 import threading
 import time
-from typing import List
+from typing import Any, List
 
 import numpy as np
 
