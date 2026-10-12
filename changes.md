@@ -1,39 +1,40 @@
-# W-SENTRY: Changes and Pre-Phase 3 Enhancements
+# W-SENTRY: System Changelog & Architectural Evolution
 
-This document details the modifications, architectural evolutions, and codebase refactorings made prior to and leading into the Phase 3 implementation, including the transition to strict empirical data fidelity (zero mock data).
+This document provides a comprehensive record of all changes, architectural evolutions, codebase refactorings, Phase 3 deliverables, and post-Phase 3 production enhancements in the **W-SENTRY** (Wireless Intrusion Detection System) project.
 
 ---
 
-## 1. Phase 1 & Phase 2 Architectural Foundations
+## 1. Phase 1 & Phase 2 Architectural Foundations (Pre-Phase 3)
 
-Before Phase 3 was initiated, the project developed the core scientific contributions:
+Prior to Phase 3, the project established the scientific foundation across two core experimental phases:
 
 ### Phase 1: Machine Learning Baselines & Domain Transfer Evaluation
 - **Native Baseline Training**: Evaluated Random Forest (RF) and XGBoost across three heterogeneous datasets:
-  - **WSN-DS** (Wireless Sensor Network routing attacks): RF 99.6% Acc, XGB 99.56% Acc.
-  - **CIC-IoT-2023** (Smart home IoT attacks): RF 99.42% Acc, XGB 99.44% Acc.
-  - **Edge-IIoTset** (Industrial IoT multi-protocol attacks): RF 92.06% Acc, XGB 91.92% Acc.
-- **Cross-Domain Collapse Finding**: Built the initial 3×3 transfer matrix evaluating native protocol features across foreign environments. Discovered catastrophic domain collapse:
+  - **WSN-DS** (Wireless Sensor Network routing attacks): RF 99.60% Acc, XGB 99.56% Acc, FAR 0.29%.
+  - **CIC-IoT-2023** (Smart home IoT attacks): RF 99.42% Acc, XGB 99.44% Acc, FAR 8.24%.
+  - **Edge-IIoTset** (Industrial IoT multi-protocol attacks): RF 92.06% Acc, XGB 91.92% Acc, FAR 0.59%.
+- **Cross-Domain Collapse Discovery**: Constructed a 3×3 transfer matrix evaluating native protocol features across foreign environments. Discovered catastrophic domain collapse:
   - WSN-DS → Edge-IIoTset: **11.94% accuracy** (worse than random guessing).
   - Edge-IIoTset → WSN-DS: **1.90% accuracy**.
+  - Concluded that native protocol-specific header fields fail to generalize across diverse network topologies.
 
 ### Phase 2: Behavioral Engineering, Hybrid Deep Learning & Domain Adaptation
 - **20-Feature Protocol-Agnostic Schema**: Defined normalized behavioral metrics (`f_volume`, `f_rate`, `f_send_recv_ratio`, `f_control_ratio`, `f_syn_ratio`, `f_port_entropy`, etc.) that abstract away network-specific header quirks.
-- **Log-Normalization Preprocessing**: Implemented signed log-scaling (`sign(x) * log1p(|x|)`) and clipping (`[-50, 50]`) followed by `RobustScaler`. This resolved gradient explosion caused by raw 32-bit protocol counters (e.g., `tcp.ack_raw`), boosting Edge-IIoTset accuracy from 56.8% to 94.4% (+37.6 pp).
+- **Log-Normalization Preprocessor**: Implemented signed log-scaling (`sign(x) * log1p(|x|)`) and clipping (`[-50, 50]`) followed by `RobustScaler`. This resolved gradient explosion caused by 32-bit protocol counters (e.g., `tcp.ack_raw`), boosting Edge-IIoTset accuracy from 56.8% to 94.39% (+37.6 pp).
 - **Hybrid CNN-BiLSTM-Attention Model**:
   - `Conv1D` layers for spatial local pattern extraction.
   - Bidirectional LSTM for temporal dependency modeling across a 5-step sequence window.
   - Scaled dot-product self-attention pooling for feature saliency.
 - **Domain Adversarial Neural Network (DANN)**:
   - Gradient Reversal Layer (GRL) aligning latent representations between CIC-IoT and Edge-IIoT.
-  - Achieved unified cross-domain accuracy of **96.5%** on CIC and **96.3%** on Edge (closing 85% of the domain transfer gap).
+  - Achieved unified cross-domain accuracy of **96.50%** on CIC and **96.29%** on Edge (closing 85% of the domain transfer gap).
 - **Confidence Calibration**: Implemented post-hoc Temperature Scaling to optimize Expected Calibration Error (ECE) (WSN: 1.70%, CIC: 0.23%, Edge: 1.78%).
 
 ---
 
 ## 2. Pre-Phase 3 Codebase Audit & Refactoring (Zero Mock Data Enforcement)
 
-Before rolling out the Phase 3 Streamlit dashboard and live capture pipeline, the scaffolded code was rigorously audited to eliminate all synthetic fallbacks, mock traffic generators, and hardcoded approximations.
+Before rolling out the Phase 3 Streamlit dashboard and live capture pipeline, the scaffolded code was rigorously audited to eliminate all synthetic fallbacks, mock traffic generators, and hardcoded approximations:
 
 ### 2.1 Live Packet Capture (`src/live/capture.py`)
 - **Removed Synthetic Traffic Generator**: Deleted `_run_simulated_stream()`, which had generated artificial packets (`scapy.IP` objects in a randomized loop).
@@ -72,13 +73,76 @@ Before rolling out the Phase 3 Streamlit dashboard and live capture pipeline, th
 
 ---
 
-## 3. Test Suite Expansion & Validation
+## 3. Phase 3 Implementation (Live System & Streamlit Dashboard)
 
-The test suite was expanded and validated across all Phase 3 components:
+Phase 3 established the end-to-end interactive system:
 
-- `tests/test_phase3_capture.py`: Added `test_live_capture_no_mock_fallback` to ensure no simulated generator attributes or mock interface options exist.
-- `tests/test_phase3_dashboard.py`: Added `test_classification_report_parsing` and `test_real_confusion_matrices_shape` to verify report parser integrity and real confusion matrix contract adherence.
-- `tests/test_phase3_features.py`: Verified 20-feature extraction output shape `(1, 5, 20)` and mathematical scaling consistency.
-- `tests/test_phase3_mitigation.py`: Verified defense decision dispatch across Normal, Jamming (alert-only), Spoofing, DoS Flood, and Probe (blocking / rate-limiting).
+### 3.1 Six-Tab Interactive Streamlit Dashboard (`src/dashboard/app.py`)
+- **Tab 1: Performance Overview (`tab_performance.py`)**:
+  - Top metric cards displaying Hybrid DL accuracy: WSN-DS (98.06%), CIC-IoT-2023 (97.80%), Edge-IIoTset (94.39%).
+  - Grouped bar charts comparing Random Forest, XGBoost, and Hybrid DL on Accuracy, F1-Score, and False Alarm Rate (FAR).
+  - DANN cross-domain improvement visualization and post-hoc Temperature Scaling ECE curves.
+- **Tab 2: Live Monitor (`tab_live_monitor.py`)**:
+  - Live packet sniffing from NIC with sliding window feature extraction.
+  - Threat rate gauge (60s rolling window), capture rate (pkts/s), buffer depth counters.
+  - Stream table showing last 50 ingested packets with threat class badges (`🟢 Normal`, `🟣 Jamming`, `🟠 Spoofing`, `🔴 DoS Flood`, `🟡 Probe Scan`), confidence percentages, and firewall actions taken.
+  - Live threat distribution pie chart and calibrated confidence histogram.
+- **Tab 3: Transfer Matrix Heatmap (`tab_transfer_matrix.py`)**:
+  - Side-by-side annotated heatmaps comparing Phase 1 baseline transfer against Phase 2 behavioral transfer.
+  - Highlights critical gains: WSN→Edge improved from 11.94% to 80.70% (+68.76 pp); Edge→WSN from 1.90% to 26.96%.
+- **Tab 4: ROC / AUC Curves (`tab_roc_auc.py`)**:
+  - Multi-class One-vs-Rest (OvR) ROC curves per dataset with class-specific AUC, micro-average, and macro-average curves loaded from `data/processed/roc_curves.npz`.
+- **Tab 5: Per-Class Metrics (`tab_per_class.py`)**:
+  - Expandable sections for each dataset displaying class-level Precision/Recall/F1 horizontal bars, real 4×4 test confusion matrices, and test support distributions.
+- **Tab 6: Connection Profiler & Automated Firewall Mitigation (`tab_profiler.py`)**:
+  - Host telemetry table grouped by source IP (packet counts, threat counts, dominant class, average confidence, active status).
+  - Active rule lease table with live countdown timers (auto-expiry).
+  - Historical firewall mitigation audit log with timestamp, threat class, dispatch command, and execution status.
 
-**Test Results: 18 passed in 4.94s.**
+### 3.2 Automated Firewall Mitigation Engine (`src/live/mitigation.py`)
+- Multi-mode defense execution:
+  - **Simulated Mode**: Safe audit logging of commands without OS disruption.
+  - **Windows Host Mode**: Dispatches real firewall rules via `netsh advfirewall firewall add rule`.
+  - **WSL Ubuntu Mode**: Dispatches real packet drops via `wsl -e sudo iptables -A INPUT -s <IP> -j DROP`.
+- Threat-specific response logic:
+  - Normal (0): No action.
+  - Jamming (1): `ALERT_ONLY` (RF physical layer anomaly).
+  - Spoofing (2): `BLOCK_IP` rule.
+  - DoS Flood (3): `BLOCK_IP` rule + rate-limiting.
+  - Intrusion Probe (4): `BLOCK_IP` rule.
+- Per-IP cooldown window (default 30s) and automatic expiration cleanup for aged leases (default 300s).
+
+### 3.3 Attack Simulation Toolkit (`src/attack/`)
+- `src/attack/flood.py`: High-throughput SYN flood, UDP flood, and ICMP flood generators via WSL `hping3` or Scapy.
+- `src/attack/scan.py`: Nmap reconnaissance wrappers (stealth SYN port scan `-sS`, OS fingerprinting `-O`, subnet ping sweep `-sn`).
+- `src/attack/arp_spoof.py`: Bidirectional ARP cache poisoning script with automatic clean ARP restoration on exit.
+- `src/attack/runner.py`: Unified CLI orchestrator for attacker machines (`python -m src.attack.runner syn-flood ...`).
+- `scripts/setup_wsl_attack.sh`: Automated provisioning script for WSL Ubuntu attacker environments.
+
+---
+
+## 4. Post-Phase 3 Changes & Production Hardening
+
+Following the completion of the Phase 3 implementation, several production enhancements, deployment workflows, and quality fixes were completed:
+
+### 4.1 Git Version Control & Remote Publishing
+- **Git Initialization & Branching**: Initialized the Git repository, established `main` as the default branch, and connected the upstream remote repository at `https://github.com/DaKaufeeBoii/WSENTRY-v2.git`.
+- **Repository Hygiene (`.gitignore`)**: Created a comprehensive `.gitignore` filtering out bytecode (`__pycache__/`, `*.pyc`), test caches (`.pytest_cache/`), coverage files, and environment directories (`.venv/`).
+- **Initial Clean Commit**: Packaged and pushed all 69 core project files (`commit 2ca5eef`) encompassing paper drafts, results, model weights, live engine, attack scripts, dashboard tabs, and tests.
+
+### 4.2 Type Annotations & Code Polish
+- **Static Typing Cleanups**: In `src/live/inference_thread.py`, resolved typing imports (`from typing import Any, List`) to ensure strict compatibility with modern Python linters.
+- **Robust Path Resolvers**: Hardened file path lookups across `app.py`, `tab_roc_auc.py`, and `feature_extractor.py` using `REPO_ROOT` anchors, preventing `FileNotFoundError` when launching Streamlit from subdirectories or alternate CWDs.
+
+### 4.3 Documentation & Runbook Modernization
+- **Demo Runbook Update (`docs/DEMO_RUNBOOK.md`)**: Replaced deprecated mock-injection instructions with concrete guidelines on conducting authentic two-laptop LAN demonstrations and offline testing via real PCAP file replays.
+- **Project Documentation (`changes.md`)**: Consolidated the full engineering trajectory (Phase 1, Phase 2, Pre-Phase 3 refactoring, Phase 3 implementation, and post-Phase 3 productionization) for academic and technical auditing.
+
+### 4.4 Test Suite Hardening & CI Readiness
+- Expanded and verified the Phase 3 test suite across 4 test modules:
+  - `tests/test_phase3_capture.py` (buffer ordering, maxlen bounds, thread safety, interface enumeration, zero-mock contract).
+  - `tests/test_phase3_dashboard.py` (result file contracts, transfer matrix keys, threat label mapping, report parsing, confusion matrix dimensional shapes).
+  - `tests/test_phase3_features.py` (5-step window shape `(1, 5, 20)`, SYN flood ratio extraction, normal HTTP ACK feature bounds, scaler consistency).
+  - `tests/test_phase3_mitigation.py` (simulated mode logging, IP cooldown suppression, threat class dispatch decision logic, lease expiry cleanup).
+
+**Validation Status: 18 / 18 tests passing in ~4.9s.**
