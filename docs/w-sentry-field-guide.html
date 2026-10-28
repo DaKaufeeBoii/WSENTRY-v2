@@ -1,0 +1,563 @@
+<title>W-SENTRY Field Guide</title>
+<meta name="description" content="A plain-language guide to the whole W-SENTRY project: the problem, the approach, the innovation, the metrics, and every technical term explained simply.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@500;600;700;800&family=Source+Serif+4:opsz,wght@8..60,400;8..60,600&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+/* Layout concept: a long-form reading document — sticky table-of-contents rail on the
+   left, a comfortable serif reading column on the right. Theme-aware (light + dark),
+   cool-slate neutrals with the W-SENTRY cyan accent. */
+:root{
+  color-scheme: light;
+  --paper:#fbfcfd; --surface:#ffffff; --surface2:#f1f5f9;
+  --ink:#0f172a; --ink-soft:#475569; --ink-faint:#8a98ab; --line:#e2e8f0; --line-soft:#eef2f6;
+  --accent:#0e7490; --accent-bright:#0891b2; --accent-soft:rgba(8,145,178,0.10);
+  --good:#15803d; --good-soft:rgba(21,128,61,0.10);
+  --warn:#b45309; --warn-soft:rgba(180,83,9,0.09);
+  --bad:#b91c1c;
+  --sans:"Inter",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --serif:"Source Serif 4",Georgia,"Times New Roman",serif;
+  --mono:"JetBrains Mono",ui-monospace,"SF Mono",Consolas,monospace;
+  --maxw:1180px; --read:72ch;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    color-scheme: dark;
+    --paper:#0b0f14; --surface:#121821; --surface2:#19212c;
+    --ink:#eef2f6; --ink-soft:#a7b4c2; --ink-faint:#687786; --line:#1e293b; --line-soft:#161f2a;
+    --accent:#22D3EE; --accent-bright:#22D3EE; --accent-soft:rgba(34,211,238,0.12);
+    --good:#4ade80; --good-soft:rgba(74,222,128,0.12);
+    --warn:#fbbf24; --warn-soft:rgba(251,191,36,0.10);
+    --bad:#f87171;
+  }
+}
+:root[data-theme="dark"]{
+  color-scheme: dark;
+  --paper:#0b0f14; --surface:#121821; --surface2:#19212c;
+  --ink:#eef2f6; --ink-soft:#a7b4c2; --ink-faint:#687786; --line:#1e293b; --line-soft:#161f2a;
+  --accent:#22D3EE; --accent-bright:#22D3EE; --accent-soft:rgba(34,211,238,0.12);
+  --good:#4ade80; --good-soft:rgba(74,222,128,0.12);
+  --warn:#fbbf24; --warn-soft:rgba(251,191,36,0.10);
+  --bad:#f87171;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--paper);color:var(--ink);font-family:var(--serif);font-size:17px;line-height:1.68;-webkit-font-smoothing:antialiased}
+h1,h2,h3,h4,.ui{font-family:var(--sans)}
+h1,h2,h3{text-wrap:balance;line-height:1.2}
+a{color:var(--accent);text-underline-offset:2px}
+:focus-visible{outline:2px solid var(--accent-bright);outline-offset:3px;border-radius:3px}
+code,.mono{font-family:var(--mono);font-size:0.86em}
+code{background:var(--surface2);padding:1.5px 6px;border-radius:5px}
+.tnum{font-variant-numeric:tabular-nums}
+
+/* top bar */
+.topbar{position:sticky;top:env(safe-area-inset-top,0px);z-index:50;background:color-mix(in srgb,var(--paper) 86%,transparent);backdrop-filter:blur(10px);border-bottom:1px solid var(--line)}
+.topbar .in{max-width:var(--maxw);margin:0 auto;padding:11px 24px;display:flex;align-items:center;gap:12px}
+.brand{display:flex;align-items:center;gap:9px;font-family:var(--sans);font-weight:800;letter-spacing:.12em;font-size:14px}
+.brand .dot{width:9px;height:9px;border-radius:50%;background:var(--accent-bright);box-shadow:0 0 10px 1px var(--accent-soft)}
+.brand .sep{color:var(--ink-faint);font-weight:500;letter-spacing:.02em;font-size:12.5px;border-left:1px solid var(--line);padding-left:12px}
+.themebtn{margin-left:auto;font-family:var(--sans);font-size:12.5px;font-weight:600;color:var(--ink-soft);background:var(--surface2);border:1px solid var(--line);border-radius:8px;padding:6px 12px;cursor:pointer}
+.themebtn:hover{color:var(--ink)}
+
+/* layout */
+.shell{max-width:var(--maxw);margin:0 auto;padding-inline:24px;display:grid;grid-template-columns:230px minmax(0,1fr);gap:46px;align-items:start}
+nav.toc{position:sticky;top:calc(env(safe-area-inset-top,0px) + 70px);align-self:start;padding-top:40px;font-family:var(--sans);max-height:calc(100vh - 90px);overflow-y:auto}
+nav.toc .lbl{font-size:11px;text-transform:uppercase;letter-spacing:.15em;color:var(--ink-faint);font-weight:700;margin-bottom:12px}
+nav.toc ol{list-style:none;margin:0;padding:0;counter-reset:toc}
+nav.toc li{counter-increment:toc;margin:1px 0}
+nav.toc a{display:flex;gap:10px;align-items:baseline;color:var(--ink-soft);text-decoration:none;font-size:13px;padding:6px 10px;border-radius:8px;border-left:2px solid transparent}
+nav.toc a::before{content:counter(toc,decimal-leading-zero);font-size:10.5px;color:var(--ink-faint);font-variant-numeric:tabular-nums;font-weight:600}
+nav.toc a:hover{background:var(--surface2);color:var(--ink)}
+nav.toc a.active{color:var(--accent-bright);border-left-color:var(--accent-bright);background:var(--accent-soft);font-weight:600}
+main{min-width:0;padding-bottom:80px}
+
+/* hero */
+header.hero{padding-block:52px 30px;max-width:var(--read)}
+.eyebrow{font-family:var(--sans);text-transform:uppercase;letter-spacing:.2em;font-size:11px;color:var(--accent-bright);font-weight:700;margin-bottom:16px}
+header.hero h1{font-family:var(--sans);font-size:clamp(30px,5vw,46px);font-weight:800;letter-spacing:-0.02em;margin:0}
+header.hero .sub{font-size:clamp(17px,2.2vw,20px);color:var(--ink-soft);margin-top:18px;line-height:1.55}
+.meta{font-family:var(--sans);font-size:12.5px;color:var(--ink-faint);margin-top:22px;display:flex;flex-wrap:wrap;gap:8px 16px}
+.meta b{color:var(--ink-soft);font-weight:600}
+
+/* sections */
+section{padding-block:34px;border-top:1px solid var(--line-soft);scroll-margin-top:80px;max-width:var(--read)}
+section>h2{font-size:clamp(22px,3vw,28px);font-weight:800;letter-spacing:-0.01em;margin:0 0 4px;display:flex;align-items:baseline;gap:12px}
+section>h2 .n{font-size:14px;color:var(--accent-bright);font-weight:700;font-variant-numeric:tabular-nums}
+.lead{font-size:18.5px;color:var(--ink-soft);margin:14px 0 8px}
+section h3{font-size:17px;font-weight:700;margin:26px 0 6px;font-family:var(--sans)}
+section p{margin:12px 0}
+section ul,section ol{margin:12px 0;padding-left:22px}
+section li{margin:7px 0}
+strong{font-weight:600;color:var(--ink)}
+
+/* callouts */
+.note{border:1px solid var(--line);border-left:3px solid var(--accent-bright);background:var(--accent-soft);border-radius:12px;padding:16px 18px;margin:22px 0;font-size:16px}
+.note.key{border-left-color:var(--good);background:var(--good-soft)}
+.note.warn{border-left-color:var(--warn);background:var(--warn-soft)}
+.note .h{font-family:var(--sans);font-weight:700;font-size:13px;letter-spacing:.02em;display:block;margin-bottom:5px}
+.note.key .h{color:var(--good)} .note.warn .h{color:var(--warn)} .note .h{color:var(--accent-bright)}
+
+/* stat strip */
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px;margin:22px 0}
+.stat{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:14px 16px}
+.stat .v{font-family:var(--sans);font-size:26px;font-weight:800;letter-spacing:-0.01em;color:var(--accent-bright);font-variant-numeric:tabular-nums}
+.stat .k{font-family:var(--sans);font-size:12px;color:var(--ink-soft);margin-top:3px;line-height:1.35}
+
+/* pipeline flow */
+.flow{display:flex;flex-wrap:wrap;gap:10px;align-items:stretch;margin:22px 0;font-family:var(--sans)}
+.flow .step{flex:1 1 150px;min-width:0;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:13px 14px;position:relative}
+.flow .step .t{font-weight:700;font-size:13.5px}
+.flow .step .d{font-size:12px;color:var(--ink-soft);margin-top:4px;line-height:1.4}
+.flow .step .num{font-size:10.5px;color:var(--accent-bright);font-weight:700}
+
+/* comparison / before-after */
+.cmp{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin:20px 0}
+.cmp>div{border:1px solid var(--line);border-radius:12px;padding:15px 16px;background:var(--surface)}
+.cmp .before{border-top:3px solid var(--bad)} .cmp .after{border-top:3px solid var(--good)}
+.cmp h4{font-family:var(--sans);font-size:12px;text-transform:uppercase;letter-spacing:.08em;margin:0 0 8px;color:var(--ink-faint)}
+
+/* tables */
+.tbl{overflow-x:auto;margin:20px 0;border:1px solid var(--line);border-radius:12px}
+table{border-collapse:collapse;width:100%;font-family:var(--sans);font-size:14px}
+th,td{text-align:left;padding:10px 14px;border-bottom:1px solid var(--line-soft)}
+thead th{background:var(--surface2);color:var(--ink-soft);font-size:11.5px;text-transform:uppercase;letter-spacing:.04em;font-weight:700}
+tbody tr:last-child td{border-bottom:none}
+td.num{text-align:right;font-variant-numeric:tabular-nums}
+
+/* glossary */
+.gloss{margin:18px 0}
+.gloss .grp{font-family:var(--sans);font-size:12px;text-transform:uppercase;letter-spacing:.1em;color:var(--accent-bright);font-weight:700;margin:26px 0 10px}
+.gloss dl{margin:0;display:grid;grid-template-columns:200px 1fr;gap:2px 20px}
+.gloss dt{font-family:var(--sans);font-weight:700;font-size:14px;color:var(--ink);padding:10px 0;border-top:1px solid var(--line-soft)}
+.gloss dd{margin:0;padding:10px 0;border-top:1px solid var(--line-soft);color:var(--ink-soft);font-size:15.5px}
+.gloss dd .term{color:var(--ink);font-weight:600}
+
+footer{max-width:var(--read);border-top:1px solid var(--line);margin-top:30px;padding-block:28px 60px;font-family:var(--sans);font-size:13px;color:var(--ink-faint)}
+footer code{font-size:12px}
+
+@media (max-width:900px){
+  .shell{grid-template-columns:1fr;gap:0}
+  nav.toc{position:static;max-height:none;padding-top:22px;border-bottom:1px solid var(--line);padding-bottom:16px}
+  nav.toc ol{columns:2;column-gap:18px}
+  main{padding-top:10px}
+}
+@media (max-width:560px){
+  body{font-size:16px}
+  .shell{padding-inline:16px}
+  .topbar .in{padding:10px 16px}
+  .cmp{grid-template-columns:1fr}
+  .gloss dl{grid-template-columns:1fr;gap:0}
+  .gloss dt{border-top:1px solid var(--line-soft);padding-bottom:0}
+  .gloss dd{border-top:none;padding-top:4px}
+  nav.toc ol{columns:1}
+}
+@media (prefers-reduced-motion:no-preference){html{scroll-behavior:smooth}}
+</style>
+
+<div class="topbar">
+  <div class="in">
+    <span class="brand"><span class="dot"></span>W-SENTRY<span class="sep">Field Guide</span></span>
+    <button class="themebtn ui" id="themebtn" aria-label="Toggle light or dark theme">Theme</button>
+  </div>
+</div>
+
+<div class="shell">
+  <nav class="toc ui" aria-label="Contents">
+    <div class="lbl">Contents</div>
+    <ol>
+      <li><a href="#what">What W-SENTRY is</a></li>
+      <li><a href="#problem">The problem</a></li>
+      <li><a href="#existing">Existing solutions</a></li>
+      <li><a href="#approach">How we approached it</a></li>
+      <li><a href="#innovation">Our innovation</a></li>
+      <li><a href="#how">How the project works</a></li>
+      <li><a href="#metrics">The metrics, explained</a></li>
+      <li><a href="#results">Reading the results</a></li>
+      <li><a href="#before">Before it runs</a></li>
+      <li><a href="#glossary">Glossary</a></li>
+      <li><a href="#map">Where things live</a></li>
+    </ol>
+  </nav>
+
+  <main>
+    <header class="hero">
+      <div class="eyebrow">A plain-language guide to the whole project</div>
+      <h1>W-SENTRY, explained from the ground up</h1>
+      <p class="sub">An intrusion-detection system for wireless and IoT networks, and a study of a problem the field usually ignores: a detector that scores 99% on its own test data can collapse to near-zero on traffic from a different network. This guide explains what we built, why, how it works, and every technical term in it — so that after reading it, nothing about the project is a mystery.</p>
+      <div class="meta">
+        <span><b>Team:</b> M. Vikas Goud · Riteesh Thiruveedhula · Shaik Gafar · V. Sai Tarun Reddy</span>
+        <span><b>Guide:</b> Mr. Bapu Sreenivas</span>
+      </div>
+    </header>
+
+    <!-- 1 -->
+    <section id="what">
+      <h2><span class="n">01</span> What W-SENTRY is</h2>
+      <p class="lead">W-SENTRY is an <strong>intrusion detection system (IDS)</strong> for wireless and Internet-of-Things networks, plus a research study measuring how well such detectors survive being moved to a network they were not trained on.</p>
+      <p>An intrusion detection system watches network traffic and flags malicious activity. W-SENTRY classifies each piece of traffic into one of five categories: <strong>Normal</strong>, <strong>Jamming</strong>, <strong>Spoofing</strong>, <strong>DoS/Flooding</strong>, and <strong>Intrusion/Probe</strong>. It does this with machine-learning models trained on three public attack datasets.</p>
+      <p>The project has three parts:</p>
+      <ul>
+        <li><strong>The models</strong> — classical machine learning (Random Forest, XGBoost) and a custom deep-learning model (a hybrid CNN-BiLSTM-Attention network), plus a domain-adaptation variant (DANN).</li>
+        <li><strong>The study</strong> — a careful measurement of the "domain gap": how much accuracy is lost when a model trained on one network's data is tested on another's.</li>
+        <li><strong>The dashboard</strong> — an obsidian-themed Security Operations Center (SOC) interface that visualizes all the results and runs a simulated live threat monitor.</li>
+      </ul>
+      <div class="note key">
+        <span class="h">The one-sentence version</span>
+        We built a wireless IDS, discovered that detectors fail badly across different networks, and showed that the right features and a domain-adaptation technique can close most of that gap.
+      </div>
+    </section>
+
+    <!-- 2 -->
+    <section id="problem">
+      <h2><span class="n">02</span> The problem we are solving</h2>
+      <p class="lead">A security model that looks excellent in the lab can be nearly useless in the field, and the usual way of reporting results hides this completely.</p>
+      <p>Almost every published IDS is trained and tested on the <em>same</em> dataset. On that dataset it reports very high accuracy — often above 95%. The unspoken assumption is that this number tells you how the model will behave once deployed. It does not.</p>
+      <p>We measured the failure directly. A Random Forest trained on the <strong>WSN-DS</strong> dataset scored <strong>99.6%</strong> on its own test data. When we fed it traffic from a different dataset, <strong>CIC-IoT-2023</strong>, its accuracy fell to <strong>0.18%</strong> — worse than guessing.</p>
+      <div class="stats">
+        <div class="stat"><div class="v">99.6%</div><div class="k">accuracy on its own test set</div></div>
+        <div class="stat"><div class="v">0.18%</div><div class="k">same model, different network</div></div>
+        <div class="stat"><div class="v">78.8 pt</div><div class="k">average "domain gap" for Random Forest</div></div>
+      </div>
+      <p>The reason is the <strong>domain gap</strong>: different networks produce different kinds of data. One dataset describes sensor-network routing behaviour; another describes internet packet flows; a third describes industrial-protocol headers. A model that memorized the shape of one kind of traffic has learned almost nothing about the others.</p>
+      <p>This matters because real deployments are never identical to the training lab. A hospital's IoT network, a factory floor, and a smart-city sensor grid all look different. If an IDS only works on the exact data it was trained on, its headline accuracy is a mirage.</p>
+      <div class="note">
+        <span class="h">The question we ask</span>
+        How much accuracy does an IDS actually lose when the training and deployment environments use different wireless protocols — and can we build a model that survives the move?
+      </div>
+    </section>
+
+    <!-- 3 -->
+    <section id="existing">
+      <h2><span class="n">03</span> What already existed, and where it fell short</h2>
+      <p class="lead">Prior work produced strong single-dataset detectors and early deep-learning architectures, but almost none of it tested the one thing that matters for deployment: cross-dataset transfer.</p>
+      <p>We surveyed recent studies. They fall into a few groups:</p>
+      <div class="tbl">
+        <table>
+          <thead><tr><th>Prior approach</th><th>What they did</th><th>The gap they left</th></tr></thead>
+          <tbody>
+            <tr><td>ML for IoT security (Zhukabayeva 2025)</td><td>Random Forest / XGBoost on IoT traffic</td><td>No deep learning, no cross-dataset test</td></tr>
+            <tr><td>CNN + RNN for WSN (Sinha 2025)</td><td>Deep models on several benchmarks</td><td>Trained and tested on each separately</td></tr>
+            <tr><td>6G sensor security (Khan 2025)</td><td>Transformers, VAE-LSTM</td><td>Limited to 6G scenarios only</td></tr>
+            <tr><td>Jamming detection (Terraf 2026)</td><td>Transfer learning for jamming</td><td>Single attack type only</td></tr>
+            <tr><td>CNN-LSTM-Attention (Phalaagae 2025)</td><td>The architecture closest to ours</td><td>No cross-dataset, no domain adaptation</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>Two patterns stand out. First, the strong results are almost always <strong>single-dataset</strong> — the model never meets unfamiliar traffic. Second, where transfer learning appears, it is narrow (one attack type, one scenario). Nobody had systematically measured the degradation across several full wireless/IoT benchmarks and then tried to close it.</p>
+      <p>That is the specific gap W-SENTRY fills.</p>
+    </section>
+
+    <!-- 4 -->
+    <section id="approach">
+      <h2><span class="n">04</span> How we approached it</h2>
+      <p class="lead">Instead of chasing a higher single-dataset number, we built the measurement first, then engineered features and models specifically to survive crossing between networks.</p>
+      <h3>Step 1 — Speak one language across datasets</h3>
+      <p>The three datasets name their columns differently and measure different things. We built a <strong>behavioral feature mapping</strong> that projects every dataset into the same 20 protocol-agnostic features — things any network has, like traffic volume, rate, burstiness, how often connections start and stop, and port diversity. This common vocabulary is what makes cross-dataset comparison meaningful at all.</p>
+      <h3>Step 2 — Clean the data so extreme values don't dominate</h3>
+      <p>Some fields have enormous ranges (one column averaged 1.7 <em>billion</em>). We apply a <strong>log-scale normalization</strong> that compresses these without destroying their order, then standardize everything. This one preprocessing choice turned out to matter more than any model change (see §7).</p>
+      <h3>Step 3 — Build and compare models</h3>
+      <ul>
+        <li><strong>Baselines:</strong> Random Forest and XGBoost — strong, fast, conventional.</li>
+        <li><strong>Hybrid deep model:</strong> a CNN-BiLSTM-Attention network that reads short sequences of traffic and learns spatial patterns (CNN), time patterns (BiLSTM), and which moments matter most (attention).</li>
+        <li><strong>DANN:</strong> a version trained to produce features that work across datasets, using a trick called a gradient reversal layer.</li>
+      </ul>
+      <h3>Step 4 — Measure transfer, honestly</h3>
+      <p>We test every model on every dataset — its own and the others — and lay the results out in a 3×3 <strong>transfer matrix</strong>. The diagonal is the familiar "same-dataset" number; everything off the diagonal is the real-world test.</p>
+      <h3>Step 5 — Make it legible</h3>
+      <p>Finally, a React SOC dashboard turns all of this into an operator's view: performance charts, the transfer heatmaps, a simulated live packet monitor, and a mitigation log.</p>
+    </section>
+
+    <!-- 5 -->
+    <section id="innovation">
+      <h2><span class="n">05</span> Our innovation — what is actually new here</h2>
+      <p class="lead">The contribution is not a single model. It is a measurement nobody had made, a feature design that makes transfer possible, and two findings that change how these systems should be built and reported.</p>
+      <ol>
+        <li><strong>A full 3×3 cross-dataset transfer matrix.</strong> We quantify exactly how much accuracy is lost moving between three real benchmarks — the number the field usually omits. For Random Forest, the average off-diagonal accuracy is just 18.2%, a domain gap of 78.8 points.</li>
+        <li><strong>A 20-feature behavioral mapping.</strong> By describing traffic in protocol-agnostic behavioural terms, heterogeneous datasets become comparable and a model trained on one can carry real signal to another.</li>
+        <li><strong>Deep learning recovers transfer — dramatically in one direction.</strong> The hybrid model lifts WSN→Edge transfer from <strong>11.9%</strong> (Random Forest) to <strong>80.7%</strong>. The deep model learns patterns that generalize where simple decision rules cannot.</li>
+        <li><strong>One DANN for two domains, no tuning.</strong> A single domain-adversarial model handles both CIC-IoT and Edge-IIoT at <strong>96.3–96.5%</strong> with no per-dataset fine-tuning — robustness bought for about a one-point accuracy cost.</li>
+        <li><strong>Preprocessing beats architecture.</strong> Log-scale normalization lifted Edge-IIoTset accuracy from <strong>56.8%</strong> to <strong>94.4%</strong> — a bigger gain than any change to the model. This is a warning to the whole field: reported accuracy can hinge on a single unreported line of preprocessing.</li>
+      </ol>
+      <div class="note key">
+        <span class="h">The headline</span>
+        Cross-dataset transfer depends more on feature-layer compatibility and preprocessing than on model architecture. Where two networks share underlying behaviour, a deep model transfers at 80%+; where they don't, no architecture saves you.
+      </div>
+    </section>
+
+    <!-- 6 -->
+    <section id="how">
+      <h2><span class="n">06</span> How the project works, end to end</h2>
+      <p class="lead">Data flows through five stages, from raw benchmark files to an operator watching a live threat feed.</p>
+      <div class="flow">
+        <div class="step"><div class="num">STAGE 1</div><div class="t">Datasets</div><div class="d">WSN-DS, CIC-IoT-2023, Edge-IIoTset — raw labeled traffic.</div></div>
+        <div class="step"><div class="num">STAGE 2</div><div class="t">Features</div><div class="d">Map to 20 behavioral features, log-normalize, scale, window into sequences of 5.</div></div>
+        <div class="step"><div class="num">STAGE 3</div><div class="t">Models</div><div class="d">RF &amp; XGBoost baselines; hybrid CNN-BiLSTM-Attention; DANN for transfer.</div></div>
+        <div class="step"><div class="num">STAGE 4</div><div class="t">Evaluation</div><div class="d">Same-dataset accuracy, the 3×3 transfer matrix, calibration.</div></div>
+        <div class="step"><div class="num">STAGE 5</div><div class="t">SOC dashboard</div><div class="d">Charts, heatmaps, a simulated live monitor and mitigation log.</div></div>
+      </div>
+      <h3>Training (Phases 1 &amp; 2)</h3>
+      <p>Phase 1 trains the classical baselines and produces the Random-Forest transfer matrix. Phase 2 trains the hybrid deep model and the DANN, produces the behavioural transfer matrix, and calibrates confidence. Both phases write their numbers to JSON result files that everything else reads.</p>
+      <h3>The live monitor (dashboard)</h3>
+      <p>In a real deployment, a packet sniffer would capture traffic off a network card, the feature extractor would turn each short window of packets into the 20 features, the trained model would classify it, and a mitigation engine would issue a firewall rule for anything malicious. In the shipped dashboard, this entire live path is <strong>simulated in the browser</strong> so the demo runs with no backend — see §9.</p>
+      <h3>Mitigation</h3>
+      <p>When a threat is detected with high confidence, the mitigation engine decides a response by attack type — block the source IP, rate-limit it, or (for jamming, which can't be blocked at the network layer) raise an alert — and logs the firewall command it would run. A cooldown prevents the same address from being acted on repeatedly.</p>
+    </section>
+
+    <!-- 7 -->
+    <section id="metrics">
+      <h2><span class="n">07</span> The metrics, and how to read them</h2>
+      <p class="lead">Every number in the project is one of these. Here is what each one means in plain terms, and what "good" looks like.</p>
+
+      <h3>Accuracy</h3>
+      <p>The share of all predictions that were correct. Simple, but <em>misleading when one class dominates</em>: if 97% of traffic is Normal, a model that always says "Normal" scores 97% while catching zero attacks. That is why we also use the metrics below.</p>
+
+      <h3>Precision &amp; Recall</h3>
+      <p>These are a pair, best understood for a single attack type:</p>
+      <ul>
+        <li><strong>Precision</strong> — of everything the model flagged as "Spoofing," how much really was. Low precision means <em>false alarms</em>.</li>
+        <li><strong>Recall</strong> — of all the real Spoofing in the data, how much the model caught. Low recall means <em>missed attacks</em>.</li>
+      </ul>
+      <p>There is usually a trade-off: flag more aggressively and you catch more (higher recall) but cry wolf more (lower precision).</p>
+
+      <h3>F1 score</h3>
+      <p>A single number that balances precision and recall (their harmonic mean). It is high only when <em>both</em> are high, so it is the fairest one-number summary for a class. Ranges 0–1 (or 0–100%).</p>
+
+      <h3>False Alarm Rate (FAR)</h3>
+      <p>Of all the genuinely benign traffic, how much was wrongly flagged as an attack. <strong>Lower is better.</strong> A high FAR exhausts human analysts, who stop trusting the alerts.</p>
+
+      <h3>Confusion matrix</h3>
+      <p>A grid with true classes down the side and predicted classes across the top. The diagonal is correct predictions; everything off it is a specific mistake (e.g., "real DoS called Normal"). It shows not just <em>how often</em> the model is wrong but <em>how</em>.</p>
+
+      <h3>Transfer accuracy &amp; the domain gap</h3>
+      <p>Transfer accuracy is simply accuracy measured on a <em>different</em> dataset than the model trained on. The <strong>domain gap</strong> is the drop from same-dataset accuracy to cross-dataset accuracy. A small gap means the model generalizes; a large gap (ours was 78.8 points for Random Forest) means it memorized.</p>
+
+      <h3>Calibration: confidence, temperature &amp; ECE</h3>
+      <p>A model doesn't just predict a class, it reports a <strong>confidence</strong>. A <em>calibrated</em> model is honest: of the predictions it makes with 90% confidence, about 90% should be correct.</p>
+      <ul>
+        <li><strong>ECE (Expected Calibration Error)</strong> measures that honesty gap. Lower is better; ours are all under 2%, meaning the models are already well-calibrated.</li>
+        <li><strong>Temperature (T)</strong> is a single dial that corrects over- or under-confidence. T greater than 1 means the model was <em>overconfident</em> and its probabilities are softened.</li>
+      </ul>
+
+      <h3>ROC curve &amp; AUC</h3>
+      <p>As you make a detector more trigger-happy, it catches more real attacks (true-positive rate rises) but also raises more false alarms (false-positive rate rises). The <strong>ROC curve</strong> plots that trade-off; <strong>AUC</strong> (area under it) summarizes it in one number: 1.0 is perfect, 0.5 is a coin flip.</p>
+      <div class="note warn">
+        <span class="h">An honesty note on our ROC</span>
+        A true ROC curve needs the model's raw scores at many thresholds, which we haven't exported yet. The dashboard's ROC uses the single measured operating point from the confusion matrix, so its AUC is a lower-bound estimate, clearly labeled as such.
+      </div>
+    </section>
+
+    <!-- 8 -->
+    <section id="results">
+      <h2><span class="n">08</span> Reading the results</h2>
+      <p class="lead">The key numbers and, more importantly, what they mean.</p>
+      <h3>Same-dataset performance</h3>
+      <p>On home turf, everything scores high. Classical trees narrowly beat the deep model on two datasets; the deep model wins on Edge-IIoTset because its class-weighting handles a rare attack class the trees ignore.</p>
+      <div class="tbl">
+        <table>
+          <thead><tr><th>Dataset</th><th class="num">Random Forest</th><th class="num">XGBoost</th><th class="num">Hybrid DL</th></tr></thead>
+          <tbody>
+            <tr><td>WSN-DS</td><td class="num">99.60%</td><td class="num">99.56%</td><td class="num">98.06%</td></tr>
+            <tr><td>CIC-IoT-2023</td><td class="num">99.42%</td><td class="num">99.44%</td><td class="num">97.80%</td></tr>
+            <tr><td>Edge-IIoTset</td><td class="num">92.06%</td><td class="num">91.92%</td><td class="num">94.39%</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <h3>The transfer story</h3>
+      <p>The dramatic result is WSN→Edge. A Random Forest carries almost nothing across (11.9%); the hybrid deep model carries most of it (80.7%).</p>
+      <div class="cmp">
+        <div class="before"><h4>Random Forest · WSN→Edge</h4><div class="stat" style="border:none;padding:0"><div class="v" style="color:var(--bad)">11.9%</div><div class="k">simple rules don't generalize</div></div></div>
+        <div class="after"><h4>Hybrid DL · WSN→Edge</h4><div class="stat" style="border:none;padding:0"><div class="v" style="color:var(--good)">80.7%</div><div class="k">learned patterns transfer (+68.8 pt)</div></div></div>
+      </div>
+      <p>Transfer is not symmetric. WSN→Edge reaches 80.7%, but Edge→WSN stays at 27% — the sensor-network model generalizes outward, but the reverse direction doesn't map back cleanly. And CIC-IoT and WSN-DS barely transfer in either direction, because their features come from entirely different network layers.</p>
+      <h3>DANN and the log-normalization finding</h3>
+      <div class="stats">
+        <div class="stat"><div class="v">96.4%</div><div class="k">one DANN covers CIC-IoT + Edge-IIoT, no tuning</div></div>
+        <div class="stat"><div class="v">56.8→94.4%</div><div class="k">Edge accuracy, from log-normalization alone</div></div>
+        <div class="stat"><div class="v">~55%</div><div class="k">3-domain DANN — failed to converge</div></div>
+      </div>
+      <p>Adding WSN-DS to the DANN broke it: routing-layer features share no structure with transport flows, so there is no common representation to find. This is the limit of domain adaptation — it bridges related domains, not unrelated ones.</p>
+      <div class="note">
+        <span class="h">The takeaway for anyone building an IDS</span>
+        Always report cross-dataset transfer alongside same-dataset accuracy. A 99% number from a single dataset tells you nothing about how the system behaves on traffic it has never seen.
+      </div>
+    </section>
+
+    <!-- 9 -->
+    <section id="before">
+      <h2><span class="n">09</span> What you need to know before it runs</h2>
+      <p class="lead">A few facts prevent misreading the project — especially what is measured versus what is demonstrated.</p>
+      <h3>Real vs. simulated — the most important distinction</h3>
+      <ul>
+        <li><strong>Real:</strong> the datasets, the training, and every accuracy/transfer/calibration number. These come from actually running the models and are stored in <code>phase1_results.json</code> and <code>phase2_results.json</code>.</li>
+        <li><strong>Simulated:</strong> the dashboard's Live Monitor and Mitigation engine. No packets are captured, no model runs in the browser, and no firewall rule is ever executed — a client-side generator produces a realistic-looking feed so the SOC workflow can be demonstrated without a backend. The <code>netsh</code>/<code>iptables</code> commands shown are illustrative.</li>
+        <li><strong>Approximate:</strong> the dashboard's ROC curves (see §7).</li>
+      </ul>
+      <h3>What it takes to run</h3>
+      <ul>
+        <li><strong>The ML pipeline</strong> needs Python with the project's requirements installed; <code>run_phase1.py</code> and <code>run_phase2.py</code> reproduce the results.</li>
+        <li><strong>The dashboard</strong> needs Node.js; from <code>frontend/</code>, run <code>npm install</code> then <code>npm run dev</code>. It runs fully standalone on the simulated feed.</li>
+        <li><strong>A true live demo</strong> (real packet capture) would additionally need administrator privileges and a capture driver (e.g. Npcap on Windows) — this is the part that is simulated in the shipped build.</li>
+      </ul>
+      <h3>Honest limitations</h3>
+      <ul>
+        <li>WSN-DS is <em>simulated</em> NS-2 traffic, not captured from a real sensor network.</li>
+        <li>CIC-IoT-2023 was subsampled from 46.7 million records to ~199k for feasibility.</li>
+        <li>One attack class (Edge-IIoT Spoofing) has very few samples, so metrics for it are shaky.</li>
+      </ul>
+    </section>
+
+    <!-- 10 -->
+    <section id="glossary">
+      <h2><span class="n">10</span> Glossary — every term in plain English</h2>
+      <p class="lead">If a word in this project was unfamiliar, it is defined here.</p>
+
+      <div class="gloss">
+        <div class="grp">Networks &amp; attacks</div>
+        <dl>
+          <dt>WSN</dt><dd>Wireless Sensor Network — many small battery-powered sensors reporting data over radio (e.g. environmental monitors).</dd>
+          <dt>IoT / IIoT</dt><dd>Internet of Things / Industrial IoT — everyday or factory devices (cameras, meters, controllers) connected to a network.</dd>
+          <dt>IDS</dt><dd>Intrusion Detection System — software that watches traffic and flags malicious activity. What W-SENTRY is.</dd>
+          <dt>SOC</dt><dd>Security Operations Center — the room/console where analysts monitor and respond to threats. The dashboard mimics one.</dd>
+          <dt>Jamming</dt><dd>Drowning out the radio channel so legitimate devices can't communicate.</dd>
+          <dt>Spoofing</dt><dd>Pretending to be another device or address to intercept or inject traffic (includes MITM and ARP spoofing).</dd>
+          <dt>DoS / Flooding</dt><dd>Denial of Service — overwhelming a target with traffic so it can't serve real users.</dd>
+          <dt>Intrusion / Probe</dt><dd>Reconnaissance and break-in attempts — port scans, password attacks, injection.</dd>
+          <dt>MITM</dt><dd>Man-in-the-Middle — an attacker secretly relaying/altering traffic between two parties.</dd>
+          <dt>LEACH</dt><dd>A routing protocol for sensor networks; WSN-DS simulates attacks against it.</dd>
+          <dt>MQTT / Modbus</dt><dd>Lightweight messaging protocols common in IoT and industrial systems.</dd>
+          <dt>TCP / UDP / ICMP / ARP</dt><dd>Core internet protocols — reliable streams, fast datagrams, ping/control, and address lookup, respectively.</dd>
+        </dl>
+
+        <div class="grp">Data &amp; features</div>
+        <dl>
+          <dt>Dataset / benchmark</dt><dd>A labeled collection of traffic used to train and test models. We use three: WSN-DS, CIC-IoT-2023, Edge-IIoTset.</dd>
+          <dt>Feature</dt><dd>A measurable property of the traffic (packet rate, size, flag counts) fed to the model as a number.</dd>
+          <dt>Behavioral feature</dt><dd>A feature describing <em>how</em> traffic behaves (volume, rate, burstiness) rather than a protocol-specific field — so it means the same thing across datasets.</dd>
+          <dt>Native feature</dt><dd>A dataset's own original columns, used only for same-dataset tests.</dd>
+          <dt>Feature distribution</dt><dd>The typical range and shape of a feature's values; mismatched distributions are the root of the domain gap.</dd>
+          <dt>Normalization</dt><dd>Rescaling features to comparable ranges so no single one dominates.</dd>
+          <dt>Log normalization</dt><dd>Compressing huge value ranges with a logarithm (while keeping order), so a field measured in billions doesn't swamp the rest.</dd>
+          <dt>RobustScaler</dt><dd>A scaler that standardizes features using the median and middle 50%, so outliers don't distort it.</dd>
+          <dt>Windowing (T=5)</dt><dd>Grouping five consecutive records into a short sequence so the deep model can see patterns over time.</dd>
+          <dt>Train / validation / test split</dt><dd>Dividing data into parts for learning, tuning, and final unbiased scoring (we use 70/10/20).</dd>
+          <dt>Stratified sampling</dt><dd>Splitting so each part keeps the same mix of classes as the whole.</dd>
+        </dl>
+
+        <div class="grp">Models &amp; training</div>
+        <dl>
+          <dt>Random Forest</dt><dd>Many decision trees voting together — a strong, fast classical model.</dd>
+          <dt>XGBoost</dt><dd>Trees built one after another, each fixing the previous one's mistakes. Powerful on tabular data.</dd>
+          <dt>Deep learning / neural network</dt><dd>Layered models that learn their own features from data rather than being told which to use.</dd>
+          <dt>CNN (Conv1D)</dt><dd>Convolutional network — slides small filters over the data to detect local patterns.</dd>
+          <dt>BiLSTM</dt><dd>A recurrent network that reads a sequence both forwards and backwards to capture time patterns.</dd>
+          <dt>Self-attention</dt><dd>A mechanism that lets the model weigh which moments in a sequence matter most.</dd>
+          <dt>Class weighting</dt><dd>Telling the model to care more about rare classes so they aren't ignored.</dd>
+          <dt>DANN</dt><dd>Domain-Adversarial Neural Network — trained so its features work across datasets, not just one.</dd>
+          <dt>Gradient reversal</dt><dd>The trick inside DANN: it punishes the model for being able to tell which dataset a sample came from, forcing dataset-independent features.</dd>
+          <dt>Domain / domain adaptation</dt><dd>A "domain" is one data source (here, one dataset); domain adaptation makes a model work across several.</dd>
+          <dt>Transfer learning</dt><dd>Reusing what a model learned on one task/data for another.</dd>
+          <dt>Overfitting</dt><dd>Memorizing the training data's quirks so well that performance on new data suffers.</dd>
+          <dt>Generalization</dt><dd>The opposite and the goal — performing well on data never seen in training.</dd>
+          <dt>Inference / latency</dt><dd>Running a trained model to get a prediction, and how long that takes (must be low for live use).</dd>
+        </dl>
+
+        <div class="grp">Metrics</div>
+        <dl>
+          <dt>Accuracy</dt><dd>Share of all predictions that are correct. Misleading when one class dominates.</dd>
+          <dt>Precision</dt><dd>Of what was flagged as an attack, how much really was (few false alarms = high).</dd>
+          <dt>Recall</dt><dd>Of all real attacks, how many were caught (few misses = high).</dd>
+          <dt>F1 score</dt><dd>A balanced single score combining precision and recall.</dd>
+          <dt>FAR</dt><dd>False Alarm Rate — share of benign traffic wrongly flagged. Lower is better.</dd>
+          <dt>Confusion matrix</dt><dd>A grid of true vs. predicted classes; the diagonal is correct, off-diagonal shows which mistakes happen.</dd>
+          <dt>Support</dt><dd>How many real samples a class has — small support makes its metrics unreliable.</dd>
+          <dt>Transfer accuracy</dt><dd>Accuracy on a <em>different</em> dataset than the one trained on.</dd>
+          <dt>Domain gap</dt><dd>The accuracy drop from same-dataset to cross-dataset testing.</dd>
+          <dt>Calibration</dt><dd>Whether a model's confidence matches how often it's actually right.</dd>
+          <dt>ECE</dt><dd>Expected Calibration Error — how far off that confidence is. Lower is better.</dd>
+          <dt>Temperature (T)</dt><dd>A dial that corrects over/under-confidence; T&gt;1 softens an overconfident model.</dd>
+          <dt>ROC curve</dt><dd>The trade-off between catching attacks and raising false alarms as sensitivity changes.</dd>
+          <dt>AUC</dt><dd>Area under the ROC curve — one number for that trade-off (1.0 perfect, 0.5 random).</dd>
+        </dl>
+
+        <div class="grp">Systems &amp; tooling</div>
+        <dl>
+          <dt>scapy</dt><dd>A Python library for capturing and crafting network packets (used for the real live capture).</dd>
+          <dt>Packet capture / promiscuous mode</dt><dd>Reading traffic off a network card, including traffic not addressed to this machine.</dd>
+          <dt>Npcap</dt><dd>A Windows driver that lets software capture packets.</dd>
+          <dt>Firewall / netsh / iptables</dt><dd>The system that blocks traffic, and the Windows (netsh) and Linux (iptables) commands to add rules.</dd>
+          <dt>Rate limiting</dt><dd>Allowing only a capped amount of traffic from a source instead of fully blocking it.</dd>
+          <dt>Mock / simulated feed</dt><dd>Fake-but-realistic data generated in the browser so the dashboard demos without a live network.</dd>
+          <dt>React / Vite / Tailwind</dt><dd>The tools the dashboard is built with — a UI library, a fast build tool, and a styling system.</dd>
+        </dl>
+      </div>
+    </section>
+
+    <!-- 11 -->
+    <section id="map">
+      <h2><span class="n">11</span> Where things live</h2>
+      <p class="lead">A map of the repository, so you can find the thing behind any claim in this guide.</p>
+      <div class="tbl">
+        <table>
+          <thead><tr><th>Location</th><th>What's there</th></tr></thead>
+          <tbody>
+            <tr><td><code>run_phase1.py</code> / <code>run_phase2.py</code></td><td>Reproduce the classical and deep-learning results.</td></tr>
+            <tr><td><code>src/</code></td><td>Python code: dataset loader, feature preprocessor, models (RF, XGBoost, hybrid, DANN), calibration.</td></tr>
+            <tr><td><code>data/processed/*.json</code></td><td>The actual result numbers everything else reads.</td></tr>
+            <tr><td><code>frontend/</code></td><td>The React SOC dashboard (run with <code>npm install &amp;&amp; npm run dev</code>).</td></tr>
+            <tr><td><code>paper/</code></td><td>The IEEE paper draft, the LaTeX source, figures, and the obsidian results page.</td></tr>
+            <tr><td><code>docs/</code></td><td>Planning documents and this field guide.</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="note key">
+        <span class="h">If you read only one thing next</span>
+        Open the obsidian results page (<code>paper/w-sentry-results.html</code>) alongside this guide — this explains the ideas, that shows every chart.
+      </div>
+    </section>
+
+    <footer>
+      W-SENTRY Field Guide · plain-language companion to the paper and dashboard. Every figure is drawn from
+      <code>data/processed/phase1_results.json</code> and <code>phase2_results.json</code>; the log-normalization figure is from the paper (Table VI).
+    </footer>
+  </main>
+</div>
+
+<script>
+"use strict";
+// Theme toggle (persisted per viewer; safe if storage is unavailable).
+(function(){
+  var root = document.documentElement, btn = document.getElementById("themebtn");
+  var saved = null;
+  try { saved = localStorage.getItem("wsentry-theme"); } catch(e){}
+  if (saved === "light" || saved === "dark") root.setAttribute("data-theme", saved);
+  function current(){
+    var attr = root.getAttribute("data-theme");
+    if (attr) return attr;
+    return window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+  }
+  btn.addEventListener("click", function(){
+    var next = current() === "dark" ? "light" : "dark";
+    root.setAttribute("data-theme", next);
+    try { localStorage.setItem("wsentry-theme", next); } catch(e){}
+  });
+})();
+
+// Table-of-contents scrollspy.
+(function(){
+  var links = Array.prototype.slice.call(document.querySelectorAll("nav.toc a"));
+  var map = {};
+  links.forEach(function(a){ map[a.getAttribute("href").slice(1)] = a; });
+  var sections = Array.prototype.slice.call(document.querySelectorAll("main section[id]"));
+  if (!("IntersectionObserver" in window) || !sections.length) return;
+  var obs = new IntersectionObserver(function(entries){
+    entries.forEach(function(en){
+      if (en.isIntersecting){
+        links.forEach(function(a){ a.classList.remove("active"); });
+        var a = map[en.target.id];
+        if (a) a.classList.add("active");
+      }
+    });
+  }, { rootMargin: "-20% 0px -70% 0px", threshold: 0 });
+  sections.forEach(function(s){ obs.observe(s); });
+})();
+</script>

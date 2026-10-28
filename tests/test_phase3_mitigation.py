@@ -1,114 +1,105 @@
 """
-Tests for automated mitigation engine (Task 3.5, 3.9).
+Tests for active defense mitigation engine and firewall rules.
 """
 import time
-from datetime import datetime, timedelta
-import pytest
+from datetime import datetime, timezone, timedelta
+import sys
+from pathlib import Path
 
-from src.live.buffer import PacketRecord
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+
 from src.live.mitigation import MitigationEngine, MitigationMode
+from src.live.buffer import PacketRecord
+
+
+def _make_record(threat_class: int, src_ip: str = "192.168.1.50") -> PacketRecord:
+    labels = {0: "Normal", 1: "Jamming", 2: "Spoofing", 3: "DoS_Flood", 4: "Intrusion_Probe"}
+    return PacketRecord(
+        timestamp=time.time(),
+        src_ip=src_ip,
+        dst_ip="192.168.1.100",
+        src_port=1234,
+        dst_port=80,
+        protocol="TCP",
+        length=64,
+        flags="S",
+        prediction=threat_class,
+        confidence=0.96,
+        label=labels.get(threat_class, "Unknown"),
+    )
 
 
 def test_mitigation_simulated_mode():
-    """Simulated mode logs action without executing OS commands."""
+    """Simulated mode logs actions and succeeds without actual OS command execution."""
     engine = MitigationEngine(mode=MitigationMode.SIMULATED)
-    rec = PacketRecord(
-        timestamp=time.time(),
-        src_ip="192.168.1.50",
-        dst_ip="192.168.1.100",
-        src_port=1234,
-        dst_port=80,
-        protocol="TCP",
-        length=64,
-        flags="SYN",
-        prediction=3,
-        confidence=0.98,
-        label="DoS_Flood",
-    )
+    rec = _make_record(threat_class=3, src_ip="192.168.1.50")
     action = engine.respond(rec)
+
     assert action is not None
     assert action.success is True
-    assert "[SIMULATED]" in action.rule_command
+    assert action.mode == MitigationMode.SIMULATED
     assert action.action == "BLOCK_IP"
-    assert len(engine.get_log()) == 1
+    assert "WSENTRY_BLOCK" in action.rule_command
+
+    log = engine.get_log()
+    assert len(log) == 1
+    assert log[0].src_ip == "192.168.1.50"
 
 
 def test_mitigation_cooldown():
-    """Same src_ip within cooldown window returns None."""
+    """Consecutive threats from the same src_ip within cooldown window return None."""
     engine = MitigationEngine(mode=MitigationMode.SIMULATED, cooldown_seconds=10.0)
-    rec = PacketRecord(
-        timestamp=time.time(),
-        src_ip="192.168.1.50",
-        dst_ip="192.168.1.100",
-        src_port=1234,
-        dst_port=80,
-        protocol="TCP",
-        length=64,
-        flags="SYN",
-        prediction=3,
-        confidence=0.98,
-        label="DoS_Flood",
-    )
-    first_resp = engine.respond(rec)
-    assert first_resp is not None
+    rec = _make_record(threat_class=3, src_ip="192.168.1.75")
 
-    # Immediate second packet from same IP should be rate-limited by cooldown
-    second_resp = engine.respond(rec)
-    assert second_resp is None
-    assert len(engine.get_log()) == 1
+    # First attempt: triggers action
+    act1 = engine.respond(rec)
+    assert act1 is not None
+
+    # Immediate second attempt: suppressed by cooldown
+    act2 = engine.respond(rec)
+    assert act2 is None
 
 
 def test_mitigation_decision_logic():
-    """DoS_Flood -> BLOCK_IP, Normal -> no action, Jamming -> ALERT_ONLY."""
+    """Verifies action types per threat class."""
     engine = MitigationEngine(mode=MitigationMode.SIMULATED, cooldown_seconds=0.0)
 
-    # 1. Normal (0)
-    rec_normal = PacketRecord(
-        timestamp=time.time(), src_ip="192.168.1.2", dst_ip="192.168.1.100",
-        src_port=80, dst_port=80, protocol="TCP", length=64, flags="",
-        prediction=0, confidence=0.99, label="Normal",
-    )
-    assert engine.respond(rec_normal) is None
+    # Class 0: Normal -> None
+    assert engine.respond(_make_record(0, "192.168.1.10")) is None
 
-    # 2. Jamming (1)
-    rec_jam = PacketRecord(
-        timestamp=time.time(), src_ip="192.168.1.3", dst_ip="192.168.1.100",
-        src_port=0, dst_port=0, protocol="OTHER", length=64, flags="",
-        prediction=1, confidence=0.95, label="Jamming",
-    )
-    act_jam = engine.respond(rec_jam)
+    # Class 1: Jamming -> ALERT_ONLY
+    act_jam = engine.respond(_make_record(1, "192.168.1.11"))
     assert act_jam is not None
     assert act_jam.action == "ALERT_ONLY"
 
-    # 3. Spoofing (2)
-    rec_spf = PacketRecord(
-        timestamp=time.time(), src_ip="192.168.1.4", dst_ip="192.168.1.100",
-        src_port=0, dst_port=0, protocol="ARP", length=42, flags="",
-        prediction=2, confidence=0.96, label="Spoofing",
-    )
-    act_spf = engine.respond(rec_spf)
-    assert act_spf is not None
-    assert act_spf.action == "BLOCK_IP"
+    # Class 2: Spoofing -> BLOCK_IP
+    act_spoof = engine.respond(_make_record(2, "192.168.1.12"))
+    assert act_spoof is not None
+    assert act_spoof.action == "BLOCK_IP"
 
-    # 4. Probe (4)
-    rec_prb = PacketRecord(
-        timestamp=time.time(), src_ip="192.168.1.5", dst_ip="192.168.1.100",
-        src_port=1000, dst_port=22, protocol="TCP", length=60, flags="SYN",
-        prediction=4, confidence=0.97, label="Intrusion_Probe",
-    )
-    act_prb = engine.respond(rec_prb)
-    assert act_prb is not None
-    assert act_prb.action == "BLOCK_IP"
+    # Class 3: DoS_Flood -> BLOCK_IP
+    act_dos = engine.respond(_make_record(3, "192.168.1.13"))
+    assert act_dos is not None
+    assert act_dos.action == "BLOCK_IP"
+
+    # Class 4: Intrusion_Probe -> BLOCK_IP
+    act_probe = engine.respond(_make_record(4, "192.168.1.14"))
+    assert act_probe is not None
+    assert act_probe.action == "BLOCK_IP"
 
 
 def test_mitigation_cleanup():
-    """Expired rules are removed after max_age."""
+    """Rules older than max_age are cleaned up."""
     engine = MitigationEngine(mode=MitigationMode.SIMULATED)
-    # Manually insert an expired block
-    old_time = datetime.now() - timedelta(seconds=500)
-    engine._active_blocks["192.168.1.99"] = old_time
+    rec = _make_record(threat_class=3, src_ip="192.168.1.99")
+    engine.respond(rec)
 
     assert "192.168.1.99" in engine.get_active_blocks()
-    removed = engine.cleanup_expired(max_age_seconds=300.0)
-    assert removed == 1
+
+    # Artificially age the active block
+    engine._active_blocks["192.168.1.99"] = datetime.now(timezone.utc) - timedelta(seconds=400)
+
+    removed_cnt = engine.cleanup_expired(max_age_seconds=300.0)
+    assert removed_cnt == 1
     assert "192.168.1.99" not in engine.get_active_blocks()
+

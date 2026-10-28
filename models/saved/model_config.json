@@ -2,13 +2,27 @@
   "n_features": 20,
   "n_classes": 5,
   "hidden_dim": 128,
-  "time_steps": 5,
-  "dataset_name": "wsn",
-  "classes": [
-    "Normal",
-    "Jamming",
-    "Spoofing",
-    "DoS_Flood",
-    "Intrusion_Probe"
-  ]
+  "feature_names": [
+    "f_volume",
+    "f_rate",
+    "f_send_recv_ratio",
+    "f_control_ratio",
+    "f_ack_ratio",
+    "f_syn_ratio",
+    "f_fin_rst_ratio",
+    "f_variability",
+    "f_port_entropy",
+    "f_flag_intensity",
+    "f_payload_ratio",
+    "f_timing",
+    "f_burst",
+    "f_protocol_type",
+    "f_energy",
+    "f_distance",
+    "f_rank",
+    "f_anomaly_score",
+    "f_conn_state",
+    "f_mqtt_activity"
+  ],
+  "model_architecture": "HybridCNNBiLSTMAttention"
 }

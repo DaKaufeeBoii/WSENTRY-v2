@@ -1,0 +1,558 @@
+<title>W-SENTRY Results</title>
+<meta name="description" content="Experimental results for cross-domain wireless/IoT intrusion detection: transfer matrices, DANN, calibration and per-class metrics.">
+<style>
+/* Layout concept: single obsidian SOC surface, sticky nav rail + scroll-story of result sections, each a bordered card with a themed SVG chart and direct value labels. Committed dark theme. */
+:root{
+  color-scheme: dark;
+  --bg:#09090B; --surface-1:#18181B; --surface-2:#1f1f24; --surface-3:#26262b;
+  --border:#27272A; --border-soft:#1f1f23;
+  --fg:#FAFAFA; --fg-muted:#A1A1AA; --fg-faint:#71717A;
+  --grid:#27272A; --axis:#3f3f46;
+  --accent:#22D3EE; --accent-dim:rgba(34,211,238,0.12); --accent-soft:rgba(34,211,238,0.22);
+  /* model series */
+  --m-rf:#a78bfa; --m-xgb:#f59e0b; --m-hybrid:#22D3EE; --m-dann:#f472b6;
+  /* status */
+  --good:#34d399; --warn:#fbbf24; --bad:#f87171;
+  --maxw:1180px;
+  --mono:ui-monospace,"SF Mono","Cascadia Code","JetBrains Mono",Consolas,monospace;
+  --sans:"Inter",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--fg);font-family:var(--sans);line-height:1.55;-webkit-font-smoothing:antialiased;margin:0}
+h1,h2,h3{text-wrap:balance;margin:0}
+a{color:var(--accent);text-decoration:none}
+a:hover{text-decoration:underline}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px;border-radius:4px}
+.tnum{font-variant-numeric:tabular-nums}
+
+/* top bar */
+.topbar{position:sticky;top:env(safe-area-inset-top,0px);z-index:40;background:rgba(9,9,11,0.82);backdrop-filter:blur(10px);border-bottom:1px solid var(--border)}
+.topbar .inner{max-width:var(--maxw);margin:0 auto;padding:12px 24px;display:flex;align-items:center;gap:18px;flex-wrap:wrap}
+.brand{display:flex;align-items:center;gap:10px;font-weight:700;letter-spacing:.14em;font-size:14px}
+.brand .dot{width:9px;height:9px;border-radius:50%;background:var(--accent);box-shadow:0 0 10px 1px var(--accent-soft)}
+.brand .tag{color:var(--fg-faint);font-weight:500;letter-spacing:.02em;font-size:12px;border-left:1px solid var(--border);padding-left:14px}
+nav.secnav{margin-left:auto;display:flex;gap:4px;flex-wrap:wrap}
+nav.secnav a{color:var(--fg-muted);font-size:12.5px;padding:5px 10px;border-radius:7px;letter-spacing:.01em}
+nav.secnav a:hover{background:var(--surface-2);color:var(--fg);text-decoration:none}
+
+.wrap{max-width:var(--maxw);margin:0 auto;padding-inline:24px;padding-block:0}
+
+/* hero */
+header.hero{padding-block:42px 26px}
+.eyebrow{text-transform:uppercase;letter-spacing:.22em;font-size:11px;color:var(--accent);font-weight:600;margin-bottom:14px}
+header.hero h1{font-size:clamp(26px,4.4vw,42px);line-height:1.12;font-weight:750;max-width:20ch}
+header.hero p.lede{color:var(--fg-muted);font-size:clamp(15px,1.8vw,17px);max-width:62ch;margin-top:16px}
+.byline{margin-top:20px;color:var(--fg-faint);font-size:13px;display:flex;gap:10px 18px;flex-wrap:wrap;align-items:center}
+.byline .names{color:var(--fg-muted)}
+.pill{display:inline-flex;align-items:center;gap:6px;background:var(--surface-2);border:1px solid var(--border);border-radius:999px;padding:4px 11px;font-size:12px;color:var(--fg-muted)}
+.pill .k{color:var(--accent);font-family:var(--mono);font-size:11px}
+
+/* KPI tiles */
+.kpis{display:grid;grid-template-columns:repeat(5,1fr);gap:12px;margin-block:10px 8px}
+.kpi{background:var(--surface-1);border:1px solid var(--border);border-radius:14px;padding:16px 16px 15px;position:relative;overflow:hidden;min-width:0}
+.kpi::before{content:"";position:absolute;left:0;top:0;bottom:0;width:3px;background:var(--accent);opacity:.9}
+.kpi .label{font-size:11.5px;color:var(--fg-faint);text-transform:uppercase;letter-spacing:.08em;line-height:1.3}
+.kpi .val{font-size:clamp(22px,3vw,30px);font-weight:720;margin-top:9px;letter-spacing:-.01em}
+.kpi .val small{font-size:.55em;color:var(--fg-muted);font-weight:600}
+.kpi .sub{font-size:11.5px;color:var(--fg-muted);margin-top:5px}
+.kpi .sub b{color:var(--good);font-weight:700}
+.kpi.jump .val{color:var(--accent)}
+
+/* sections */
+section{padding-block:30px;scroll-margin-top:72px;border-top:1px solid var(--border-soft)}
+.sec-head{display:flex;align-items:baseline;gap:14px;flex-wrap:wrap;margin-bottom:6px}
+.sec-head .num{font-family:var(--mono);color:var(--accent);font-size:13px;font-weight:600}
+.sec-head h2{font-size:clamp(19px,2.6vw,25px);font-weight:700}
+.sec-sub{color:var(--fg-muted);font-size:14.5px;max-width:74ch;margin-bottom:22px}
+
+.card{background:var(--surface-1);border:1px solid var(--border);border-radius:16px;padding:20px 20px 18px;min-width:0}
+.card .card-title{font-size:13.5px;font-weight:650;letter-spacing:.01em}
+.card .card-note{font-size:12.5px;color:var(--fg-faint);margin-top:2px;margin-bottom:14px}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+
+/* legend */
+.legend{display:flex;gap:16px;flex-wrap:wrap;margin:2px 0 10px;font-size:12.5px;color:var(--fg-muted)}
+.legend .it{display:inline-flex;align-items:center;gap:7px}
+.legend .sw{width:12px;height:12px;border-radius:3px;flex:none}
+
+/* chart */
+.chart{width:100%}
+svg{display:block;width:100%;height:auto;overflow:visible}
+.ax{fill:var(--fg-faint);font-size:11px;font-family:var(--sans)}
+.ax.tab{font-variant-numeric:tabular-nums}
+.glab{fill:var(--fg-muted);font-size:12px}
+.vlab{fill:var(--fg);font-size:11px;font-weight:600;font-variant-numeric:tabular-nums}
+.grid-l{stroke:var(--grid);stroke-width:1}
+.base-l{stroke:var(--axis);stroke-width:1}
+
+/* heatmap */
+.hm-wrap{overflow-x:auto}
+.cell-v{font-weight:650;font-variant-numeric:tabular-nums}
+.hm-axis{fill:var(--fg-muted);font-size:11.5px}
+.hm-corner{fill:var(--fg-faint);font-size:10.5px}
+.ramp{display:flex;align-items:center;gap:9px;margin-top:12px;font-size:11px;color:var(--fg-faint)}
+.ramp .bar{height:9px;flex:1;max-width:200px;border-radius:5px}
+
+/* tables */
+.tbl-wrap{overflow-x:auto;margin-top:4px}
+table{border-collapse:collapse;width:100%;font-size:13px}
+th,td{text-align:right;padding:9px 12px;border-bottom:1px solid var(--border-soft)}
+th:first-child,td:first-child{text-align:left}
+thead th{color:var(--fg-faint);font-weight:600;font-size:11.5px;text-transform:uppercase;letter-spacing:.05em;border-bottom:1px solid var(--border)}
+tbody tr:hover{background:var(--surface-2)}
+td.num{font-variant-numeric:tabular-nums}
+.best{color:var(--accent);font-weight:700}
+
+/* callout */
+.callout{border:1px solid var(--border);border-left:3px solid var(--accent);background:var(--accent-dim);border-radius:12px;padding:14px 16px;font-size:13.5px;color:var(--fg);margin-top:16px}
+.callout.warnc{border-left-color:var(--warn);background:rgba(251,191,36,0.08)}
+.callout b{color:var(--accent)}
+.callout.warnc b{color:var(--warn)}
+.callout .h{font-weight:700;display:block;margin-bottom:3px}
+
+/* tabs */
+.tabs{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:16px}
+.tabs button{background:var(--surface-2);border:1px solid var(--border);color:var(--fg-muted);font:inherit;font-size:13px;font-weight:600;padding:8px 15px;border-radius:9px;cursor:pointer}
+.tabs button[aria-selected="true"]{background:var(--accent);color:#06181c;border-color:var(--accent)}
+.tabs button:hover:not([aria-selected="true"]){color:var(--fg);border-color:var(--axis)}
+
+.chip{display:inline-block;font-size:11px;font-family:var(--mono);padding:2px 8px;border-radius:999px;background:var(--surface-2);border:1px solid var(--border);color:var(--fg-muted)}
+
+/* footer */
+footer{border-top:1px solid var(--border);margin-top:20px;padding-block:28px 48px;color:var(--fg-faint);font-size:12.5px}
+footer .prov{display:flex;gap:10px 22px;flex-wrap:wrap;margin-bottom:12px}
+footer code{font-family:var(--mono);color:var(--fg-muted);background:var(--surface-2);padding:2px 6px;border-radius:5px;font-size:11.5px}
+
+@media (max-width:860px){
+  .kpis{grid-template-columns:repeat(2,1fr)}
+  .grid3{grid-template-columns:1fr}
+  .grid2{grid-template-columns:1fr}
+}
+@media (max-width:520px){
+  .wrap{padding-inline:16px}
+  .topbar .inner{padding:10px 16px}
+  .kpis{grid-template-columns:1fr 1fr}
+  nav.secnav{display:none}
+}
+@media (prefers-reduced-motion:no-preference){
+  .kpi,.card{transition:border-color .15s ease}
+}
+</style>
+
+<div class="topbar">
+  <div class="inner">
+    <span class="brand"><span class="dot"></span>W-SENTRY<span class="tag">SOC · Results</span></span>
+    <nav class="secnav" aria-label="Sections">
+      <a href="#same">Same-dataset</a>
+      <a href="#transfer">Transfer</a>
+      <a href="#dann">DANN</a>
+      <a href="#ablation">Ablation</a>
+      <a href="#calib">Calibration</a>
+      <a href="#perclass">Per-class</a>
+    </nav>
+  </div>
+</div>
+
+<div class="wrap">
+  <header class="hero">
+    <div class="eyebrow">Cross-domain intrusion detection · experimental results</div>
+    <h1>Transferability of deep-learning IDS across three wireless/IoT benchmarks</h1>
+    <p class="lede">A single IDS reports 99.6% on its own test set and 0.18% on a different dataset. This document visualizes every measured result behind that gap — the 3×3 transfer matrices, the hybrid CNN-BiLSTM-Attention model, two-domain DANN, calibration, and per-class behavior — as the evidence baseline for the paper.</p>
+    <div class="byline">
+      <span class="names">M. Vikas Goud · Riteesh Thiruveedhula · Shaik Gafar · V. Sai Tarun Reddy</span>
+      <span class="pill"><span class="k">WSN-DS</span> · CIC-IoT-2023 · Edge-IIoTset</span>
+      <span class="pill"><span class="k">5-class</span> Normal · Jamming · Spoofing · DoS · Intrusion</span>
+    </div>
+  </header>
+
+  <div class="kpis">
+    <div class="kpi"><div class="label">Hybrid DL · WSN-DS</div><div class="val tnum">98.06<small>%</small></div><div class="sub">same-dataset accuracy</div></div>
+    <div class="kpi"><div class="label">Hybrid DL · CIC-IoT</div><div class="val tnum">97.80<small>%</small></div><div class="sub">same-dataset accuracy</div></div>
+    <div class="kpi"><div class="label">Hybrid DL · Edge-IIoT</div><div class="val tnum">94.39<small>%</small></div><div class="sub">beats RF (+2.3 pt)</div></div>
+    <div class="kpi jump"><div class="label">WSN → Edge transfer</div><div class="val tnum">80.7<small>%</small></div><div class="sub">up from <b>11.9%</b> (RF baseline)</div></div>
+    <div class="kpi"><div class="label">DANN joint (CIC+Edge)</div><div class="val tnum">96.4<small>%</small></div><div class="sub">one model, <b>no</b> per-set tuning</div></div>
+  </div>
+
+  <!-- ============ SAME DATASET ============ -->
+  <section id="same">
+    <div class="sec-head"><span class="num">I</span><h2>Same-dataset performance</h2></div>
+    <p class="sec-sub">Each model trained and tested on the same benchmark. Classical trees edge out the deep model on WSN-DS and CIC-IoT by 1–2 points; on Edge-IIoTset the class-weighted hybrid model wins by handling the rare Spoofing (MITM) class the trees miss.</p>
+
+    <div class="grid2">
+      <div class="card">
+        <div class="card-title">Classification accuracy by model</div>
+        <div class="card-note">Higher is better · full 0–100% scale</div>
+        <div class="legend" id="lg-acc"></div>
+        <div class="chart" id="ch-acc"></div>
+      </div>
+      <div class="card">
+        <div class="card-title">False alarm rate (FAR)</div>
+        <div class="card-note">Lower is better · tree baselines</div>
+        <div class="legend" id="lg-far"></div>
+        <div class="chart" id="ch-far"></div>
+        <div class="callout"><span class="h">CIC-IoT costs on false alarms.</span>Both trees fire on ~8–9% of benign CIC-IoT flows (FAR 8.24% RF / 9.31% XGB) versus well under 1% elsewhere.</div>
+      </div>
+    </div>
+
+    <div class="card" style="margin-top:16px">
+      <div class="card-title">Accuracy &amp; training cost</div>
+      <div class="card-note">Accuracy (%), false alarm rate (%), and wall-clock training time (s)</div>
+      <div class="tbl-wrap">
+        <table>
+          <thead><tr><th>Dataset</th><th>RF acc</th><th>XGB acc</th><th>Hybrid DL acc</th><th>RF FAR</th><th>XGB FAR</th><th>RF train (s)</th><th>XGB train (s)</th></tr></thead>
+          <tbody id="tb-same"></tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ TRANSFER ============ -->
+  <section id="transfer">
+    <div class="sec-head"><span class="num">II</span><h2>Cross-dataset transfer</h2></div>
+    <p class="sec-sub">Train on the row dataset, test on the column dataset. The diagonal is same-dataset accuracy; everything off it measures the domain gap. The RF baseline collapses off-diagonal (avg 18.2%); the hybrid model with behavioral features recovers large parts of it — most dramatically WSN→Edge.</p>
+
+    <div class="grid3">
+      <div class="card">
+        <div class="card-title">RF baseline</div>
+        <div class="card-note">native features · accuracy %</div>
+        <div class="hm-wrap"><div class="chart" id="hm-rf"></div></div>
+      </div>
+      <div class="card">
+        <div class="card-title">Hybrid CNN-BiLSTM-Attn</div>
+        <div class="card-note">behavioral features · accuracy %</div>
+        <div class="hm-wrap"><div class="chart" id="hm-dl"></div></div>
+      </div>
+      <div class="card">
+        <div class="card-title">Change (Hybrid − RF)</div>
+        <div class="card-note">percentage-point delta</div>
+        <div class="hm-wrap"><div class="chart" id="hm-delta"></div></div>
+      </div>
+    </div>
+
+    <p class="sec-sub" style="margin-top:16px;margin-bottom:0;font-size:13px">
+      <strong style="color:var(--fg)">Protocol note:</strong> off-diagonal cells are computed over the
+      intersection of the source and target label sets — the target test set is masked to the classes the
+      source model can emit, and predictions outside that set count as errors. Diagonal cells use the
+      target's full test set, so the two are not directly comparable.
+    </p>
+
+    <div class="grid2" style="margin-top:16px">
+      <div class="callout"><span class="h">WSN→Edge: 11.9% → 80.7%.</span>The deep model's behavioral features transfer routing-derived signal to Edge traffic — a <b>+68.8 pt</b> jump. The reverse (Edge→WSN) stays low at 27%: transport patterns don't map back to routing semantics.</div>
+      <div class="card" style="display:flex;flex-direction:column;justify-content:center;gap:14px">
+        <div style="display:flex;justify-content:space-between;align-items:baseline"><span style="color:var(--fg-muted);font-size:13px">Off-diagonal avg · RF</span><span class="tnum" style="font-size:22px;font-weight:700;color:var(--bad)">18.2%</span></div>
+        <div style="display:flex;justify-content:space-between;align-items:baseline"><span style="color:var(--fg-muted);font-size:13px">Off-diagonal avg · Hybrid</span><span class="tnum" style="font-size:22px;font-weight:700;color:var(--good)">31.0%</span></div>
+        <div style="display:flex;justify-content:space-between;align-items:baseline;border-top:1px solid var(--border);padding-top:12px"><span style="color:var(--fg-muted);font-size:13px">Domain gap (RF, diag−offdiag)</span><span class="tnum" style="font-size:22px;font-weight:700">78.8 pt</span></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ DANN ============ -->
+  <section id="dann">
+    <div class="sec-head"><span class="num">III</span><h2>Domain adversarial training (DANN)</h2></div>
+    <p class="sec-sub">A gradient-reversal domain discriminator forces domain-invariant features. Trained jointly on CIC-IoT and Edge-IIoT, one DANN reaches 96.3–96.5% on both with no per-dataset fine-tuning — a 1–1.3 point cost over per-dataset models, bought back as cross-domain robustness.</p>
+    <div class="grid2">
+      <div class="card">
+        <div class="card-title">Per-dataset model vs joint DANN</div>
+        <div class="card-note">accuracy % · one DANN covers both datasets</div>
+        <div class="legend" id="lg-dann"></div>
+        <div class="chart" id="ch-dann"></div>
+      </div>
+      <div class="card" style="display:flex;flex-direction:column;gap:14px;justify-content:center">
+        <div>
+          <div style="font-size:13.5px;font-weight:650;margin-bottom:8px">Why two domains, not three</div>
+          <p style="font-size:13px;color:var(--fg-muted);margin:0">Adding WSN-DS breaks convergence: routing-layer features share no structure with transport flows, so no domain-invariant representation exists for the discriminator to find.</p>
+        </div>
+        <div class="callout warnc" style="margin-top:0"><span class="h">3-domain DANN failed to converge.</span>Threat accuracy plateaued at <b>~55%</b> with domain accuracy oscillating between 33% (chance) and 67%. Gradient reversal bridges related domains only.</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ ABLATION ============ -->
+  <section id="ablation">
+    <div class="sec-head"><span class="num">IV</span><h2>Preprocessing ablation — log normalization</h2></div>
+    <p class="sec-sub">The single largest accuracy gain came from preprocessing, not architecture. On Edge-IIoTset the <code style="font-family:var(--mono);font-size:12px;background:var(--surface-2);padding:1px 6px;border-radius:5px">tcp.ack_raw</code> column (mean 1.7 billion) overwhelmed RobustScaler until a sign-preserving log transform compressed its range.</p>
+    <div class="grid2">
+      <div class="card">
+        <div class="card-title">Edge-IIoTset same-dataset accuracy</div>
+        <div class="card-note">effect of a single preprocessing line</div>
+        <div class="chart" id="ch-ablation"></div>
+      </div>
+      <div class="card" style="display:flex;flex-direction:column;justify-content:center;gap:12px">
+        <div class="tnum" style="font-size:44px;font-weight:760;color:var(--accent);line-height:1">+37.6<span style="font-size:.5em;color:var(--fg-muted)"> pt</span></div>
+        <p style="font-size:13.5px;color:var(--fg-muted);margin:0">from <code style="font-family:var(--mono);font-size:12px;background:var(--surface-2);padding:1px 6px;border-radius:5px">x' = sign(x)·log(1+|x|)</code> then clip to [−50, 50]. Larger than any architectural change in this study — a reminder that reported IDS accuracy is sensitive to preprocessing that often goes unreported.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ CALIBRATION ============ -->
+  <section id="calib">
+    <div class="sec-head"><span class="num">V</span><h2>Confidence calibration</h2></div>
+    <p class="sec-sub">Post-hoc temperature scaling fits one parameter T on the validation set. The models are already well-calibrated (ECE &lt; 2%) before scaling, so the practical effect is small — here ECE moves slightly in both directions.</p>
+    <div class="grid2">
+      <div class="card">
+        <div class="card-title">Expected calibration error</div>
+        <div class="card-note">before vs after temperature scaling · lower is better</div>
+        <div class="legend" id="lg-ece"></div>
+        <div class="chart" id="ch-ece"></div>
+      </div>
+      <div class="card">
+        <div class="card-title">Temperature &amp; ECE</div>
+        <div class="card-note">T &gt; 1 indicates overconfident softmax</div>
+        <div class="tbl-wrap">
+          <table>
+            <thead><tr><th>Dataset</th><th>Temp T</th><th>ECE before</th><th>ECE after</th></tr></thead>
+            <tbody id="tb-calib"></tbody>
+          </table>
+        </div>
+        <div class="callout" style="margin-top:14px"><span class="h">CIC-IoT softmax is the most overconfident.</span>Its T = 1.495 is the furthest from 1.0, but its ECE is already the lowest (0.23%), so scaling barely matters in practice.</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ PER CLASS ============ -->
+  <section id="perclass">
+    <div class="sec-head"><span class="num">VI</span><h2>Per-class behavior</h2></div>
+    <p class="sec-sub">Precision/recall/F1 and the confusion matrix per dataset (RF model). The headline accuracy hides minority-class difficulty — most starkly Edge-IIoTset's Spoofing class, where only 22 test samples give precision 0.01 at perfect recall.</p>
+    <div class="tabs" id="pc-tabs" role="tablist" aria-label="Dataset"></div>
+    <div class="grid2">
+      <div class="card">
+        <div class="card-title" id="pc-title-metrics">Per-class metrics</div>
+        <div class="card-note">precision · recall · F1</div>
+        <div class="legend" id="lg-pc"></div>
+        <div class="chart" id="ch-perclass"></div>
+      </div>
+      <div class="card">
+        <div class="card-title">Confusion matrix</div>
+        <div class="card-note">rows = true class, columns = predicted · counts</div>
+        <div class="hm-wrap"><div class="chart" id="hm-conf"></div></div>
+      </div>
+    </div>
+    <div class="callout warnc" id="pc-note" style="margin-top:16px"></div>
+  </section>
+
+  <footer>
+    <div class="prov">
+      <span>Source · <code>data/processed/phase1_results.json</code></span>
+      <span><code>data/processed/phase2_results.json</code></span>
+      <span>Log-norm ablation from the paper draft (Table VI)</span>
+    </div>
+    <p style="margin:0;max-width:80ch">Limitations carried from the study: WSN-DS is NS-2 simulated traffic; CIC-IoT-2023 was subsampled from 46.7M to ~199K records; the DANN per-dataset reference uses the behavioral transfer-matrix diagonal (97.79 / 97.42). Confusion matrices and per-class metrics shown for the RF model.</p>
+  </footer>
+</div>
+
+<script>
+"use strict";
+/* ---------------- DATA (verbatim from results JSON + paper Table VI) ---------------- */
+const DATA = {
+  acc: { // same-dataset accuracy
+    groups: ["WSN-DS","CIC-IoT-2023","Edge-IIoTset"],
+    series: [
+      {name:"RF",        color:"var(--m-rf)",     vals:[99.60,99.42,92.06]},
+      {name:"XGBoost",   color:"var(--m-xgb)",    vals:[99.56,99.44,91.92]},
+      {name:"Hybrid DL", color:"var(--m-hybrid)", vals:[98.06,97.80,94.39]},
+    ]
+  },
+  far: {
+    groups: ["WSN-DS","CIC-IoT-2023","Edge-IIoTset"],
+    series: [
+      {name:"RF",      color:"var(--m-rf)",  vals:[0.29,8.24,0.59]},
+      {name:"XGBoost", color:"var(--m-xgb)", vals:[0.33,9.31,0.58]},
+    ]
+  },
+  same: [ // dataset, rfAcc, xgbAcc, dlAcc, rfFar, xgbFar, rfTrain, xgbTrain
+    ["WSN-DS",99.60,99.56,98.06,0.29,0.33,117.16,24.87],
+    ["CIC-IoT-2023",99.42,99.44,97.80,8.24,9.31,32.79,35.41],
+    ["Edge-IIoTset",92.06,91.92,94.39,0.59,0.58,10.40,26.19],
+  ],
+  labels: ["WSN","CIC","Edge"],
+  tmRF:    [[99.60,0.18,11.94],[1.26,99.42,26.30],[1.90,67.64,92.06]],
+  tmDL:    [[97.79,0.30,80.70],[0.99,97.79,15.40],[26.96,61.77,97.42]],
+  dann: {
+    groups:["CIC-IoT","Edge-IIoT"],
+    series:[
+      {name:"Per-dataset hybrid", color:"var(--m-hybrid)", vals:[97.79,97.42]},
+      {name:"DANN (joint)",       color:"var(--m-dann)",   vals:[96.50,96.29]},
+    ]
+  },
+  ablation:{groups:["Clip + RobustScaler","Log + clip + RobustScaler"],
+            series:[{name:"acc",color:["var(--bad)","var(--accent)"],vals:[56.80,94.39]}]},
+  calib:[ // dataset, T, before, after
+    ["WSN-DS",1.040,1.70,1.86],
+    ["CIC-IoT",1.495,0.23,0.43],
+    ["Edge-IIoT",1.077,1.78,2.04],
+  ],
+  perclass:{
+    "WSN-DS":{
+      classes:["Normal","Jamming","Spoofing","DoS"],
+      p:[1.00,0.95,0.99,0.91], r:[1.00,0.93,1.00,1.00], f:[1.00,0.94,0.99,0.95],
+      support:[68014,1328,4929,662],
+      conf:[[67818,67,65,64],[93,1233,2,0],[9,0,4920,0],[2,0,0,660]],
+      note:"<span class='h'>Clean separation.</span>All four classes exceed F1 0.94. The weakest, DoS/Flooding, still hits recall 1.00 — misses are benign flows mislabeled as attacks, not missed attacks."
+    },
+    "CIC-IoT-2023":{
+      classes:["Normal","Spoofing","DoS","Intrusion"],
+      p:[0.91,0.83,1.00,0.79], r:[0.92,0.79,1.00,0.82], f:[0.91,0.81,1.00,0.80],
+      support:[934,421,38307,335],
+      conf:[[857,46,0,31],[50,334,0,37],[0,0,38301,6],[35,21,4,275]],
+      note:"<span class='h'>DoS is trivial; the rest are confusable.</span>DoS/Flooding is near-perfect (F1 1.00) because it dominates the sample, while Normal, Spoofing and Intrusion trade misclassifications among themselves (F1 0.80–0.91)."
+    },
+    "Edge-IIoTset":{
+      classes:["Normal","Spoofing","DoS","Intrusion"],
+      p:[1.00,0.01,0.92,0.92], r:[0.99,1.00,0.57,0.92], f:[1.00,0.02,0.70,0.92],
+      support:[29121,22,6092,4764],
+      conf:[[28948,108,1,64],[0,22,0,0],[0,2298,3463,331],[1,79,294,4390]],
+      note:"<span class='h'>The minority-class failure.</span>Spoofing has just 22 test samples (1,214 MITM total). RF catches all 22 (recall 1.00) but floods the class with false positives — precision 0.01, F1 0.02. This is exactly the gap the class-weighted hybrid model narrows."
+    }
+  }
+};
+
+/* ---------------- helpers ---------------- */
+const NS="http://www.w3.org/2000/svg";
+function el(tag,attrs,text){const e=document.createElementNS(NS,tag);for(const k in attrs)e.setAttribute(k,attrs[k]);if(text!=null)e.textContent=text;return e;}
+function clear(id){const n=document.getElementById(id);n.innerHTML="";return n;}
+function legend(id,series){const n=document.getElementById(id);n.innerHTML="";series.forEach(s=>{const it=document.createElement("span");it.className="it";const sw=document.createElement("span");sw.className="sw";sw.style.background=Array.isArray(s.color)?s.color[s.color.length-1]:s.color;it.appendChild(sw);it.appendChild(document.createTextNode(s.name));n.appendChild(it);});}
+
+/* grouped vertical bars. spec:{groups,series,unit,max,fmt} */
+function groupedBar(id,spec){
+  const W=560,H=300,padL=44,padR=14,padT=18,padB=46;
+  const plotW=W-padL-padR, plotH=H-padT-padB;
+  const max=spec.max, fmt=spec.fmt||(v=>v.toFixed(2));
+  const svg=el("svg",{viewBox:`0 0 ${W} ${H}`,role:"img"});
+  // gridlines + y ticks
+  const ticks=spec.ticks||[0,25,50,75,100];
+  ticks.forEach(t=>{
+    const y=padT+plotH-(t/max)*plotH;
+    svg.appendChild(el("line",{x1:padL,y1:y,x2:W-padR,y2:y,class:t===0?"base-l":"grid-l"}));
+    svg.appendChild(el("text",{x:padL-8,y:y+3.5,"text-anchor":"end",class:"ax tab"},String(t)));
+  });
+  const nG=spec.groups.length, nS=spec.series.length;
+  const gW=plotW/nG;
+  const innerPad=gW*0.18;
+  const bandW=gW-innerPad*2;
+  const bw=Math.min(bandW/nS-5, 46);
+  const totalBarsW=bw*nS+5*(nS-1);
+  spec.groups.forEach((g,gi)=>{
+    const gx=padL+gi*gW+gW/2;
+    const start=gx-totalBarsW/2;
+    spec.series.forEach((s,si)=>{
+      const v=s.vals[gi];
+      const h=(v/max)*plotH;
+      const x=start+si*(bw+5);
+      const y=padT+plotH-h;
+      const col=Array.isArray(s.color)?s.color[gi]:s.color;
+      const r=el("rect",{x:x,y:y,width:bw,height:Math.max(h,1),rx:4,fill:col,"fill-opacity":"0.92"});
+      const tt=el("title",null,`${s.name} · ${g}: ${fmt(v)}${spec.unit||""}`);
+      r.appendChild(tt);svg.appendChild(r);
+      svg.appendChild(el("text",{x:x+bw/2,y:y-6,"text-anchor":"middle",class:"vlab"},fmt(v)));
+    });
+    svg.appendChild(el("text",{x:gx,y:H-padB+20,"text-anchor":"middle",class:"glab"},g));
+  });
+  if(spec.unit&&spec.unit.trim()){svg.appendChild(el("text",{x:padL-32,y:padT-6,"text-anchor":"start",class:"ax"},spec.unit.trim()));}
+  clear(id).appendChild(svg);
+}
+
+/* heatmap. mode: 'transfer'|'delta'|'conf' */
+function heatmap(id,spec){
+  const rows=spec.rows, cols=spec.cols, M=spec.matrix;
+  const n=rows.length, m=cols.length;
+  const cell=Math.min(78, Math.floor(430/m));
+  const lab=46, top=24, W=lab+m*cell+6, H=top+n*cell+lab;
+  const svg=el("svg",{viewBox:`0 0 ${W} ${H}`,role:"img"});
+  // axis titles
+  svg.appendChild(el("text",{x:lab+m*cell/2,y:12,"text-anchor":"middle",class:"hm-corner"},spec.colTitle||"tested on"));
+  const rt=el("text",{x:14,y:top+n*cell/2,"text-anchor":"middle",class:"hm-corner",transform:`rotate(-90 14 ${top+n*cell/2})`},spec.rowTitle||"trained on");
+  svg.appendChild(rt);
+  // column headers
+  cols.forEach((c,j)=>svg.appendChild(el("text",{x:lab+j*cell+cell/2,y:top-7,"text-anchor":"middle",class:"hm-axis"},c)));
+  // rowSums for conf
+  const rowSums=M.map(row=>row.reduce((a,b)=>a+b,0));
+  for(let i=0;i<n;i++){
+    svg.appendChild(el("text",{x:lab-8,y:top+i*cell+cell/2+4,"text-anchor":"end",class:"hm-axis"},rows[i]));
+    for(let j=0;j<m;j++){
+      const v=M[i][j];
+      let fill,txt="#fff",frac;
+      if(spec.mode==="transfer"){
+        const cl=Math.max(0,Math.min(100,v));
+        fill=`hsl(${(cl*1.4).toFixed(0)} 58% 40%)`;
+      }else if(spec.mode==="delta"){
+        const mag=v>=0?Math.min(v/69,1):Math.min(-v/12,1);
+        const hue=v>=0?140:0;
+        fill=`hsl(${hue} ${(12+mag*55).toFixed(0)}% ${(20+mag*18).toFixed(0)}%)`;
+      }else{ // conf
+        frac=rowSums[i]?v/rowSums[i]:0;
+        fill=`hsl(187 ${(14+frac*58).toFixed(0)}% ${(11+frac*40).toFixed(0)}%)`;
+        if(frac<0.06)txt="var(--fg-faint)";
+      }
+      const x=lab+j*cell, y=top+i*cell;
+      const rct=el("rect",{x:x+1,y:y+1,width:cell-2,height:cell-2,rx:5,fill:fill});
+      if(i===j&&spec.mode!=="delta")rct.setAttribute("stroke","var(--accent)"),rct.setAttribute("stroke-width","1.4");
+      rct.appendChild(el("title",null,`${rows[i]} → ${cols[j]}: ${spec.fmt(v)}`));
+      svg.appendChild(rct);
+      const fs=cell>=58?13:11;
+      svg.appendChild(el("text",{x:x+cell/2,y:y+cell/2+fs/3,"text-anchor":"middle",class:"cell-v",fill:txt,"font-size":fs},spec.fmt(v)));
+    }
+  }
+  clear(id).appendChild(svg);
+}
+
+/* ---------------- render ---------------- */
+// Section I
+legend("lg-acc",DATA.acc.series); legend("lg-far",DATA.far.series);
+groupedBar("ch-acc",{groups:DATA.acc.groups,series:DATA.acc.series,max:100,unit:" %",fmt:v=>v.toFixed(2)});
+groupedBar("ch-far",{groups:DATA.far.groups,series:DATA.far.series,max:10,ticks:[0,2.5,5,7.5,10],unit:" %",fmt:v=>v.toFixed(2)});
+(function(){const tb=document.getElementById("tb-same");DATA.same.forEach(r=>{
+  const best=Math.max(r[1],r[2],r[3]);
+  const td=(v,cls="")=>`<td class="num ${cls}">${v.toFixed(2)}</td>`;
+  tb.insertAdjacentHTML("beforeend",`<tr><td>${r[0]}</td>${td(r[1],r[1]===best?'best':'')}${td(r[2],r[2]===best?'best':'')}${td(r[3],r[3]===best?'best':'')}${td(r[4])}${td(r[5])}<td class="num">${r[6].toFixed(1)}</td><td class="num">${r[7].toFixed(1)}</td></tr>`);
+});})();
+
+// Section II
+heatmap("hm-rf",{rows:DATA.labels,cols:DATA.labels,matrix:DATA.tmRF,mode:"transfer",fmt:v=>v.toFixed(1)});
+heatmap("hm-dl",{rows:DATA.labels,cols:DATA.labels,matrix:DATA.tmDL,mode:"transfer",fmt:v=>v.toFixed(1)});
+const delta=DATA.tmDL.map((row,i)=>row.map((v,j)=>+(v-DATA.tmRF[i][j]).toFixed(1)));
+heatmap("hm-delta",{rows:DATA.labels,cols:DATA.labels,matrix:delta,mode:"delta",fmt:v=>(v>0?"+":"")+v.toFixed(1)});
+
+// Section III
+legend("lg-dann",DATA.dann.series);
+groupedBar("ch-dann",{groups:DATA.dann.groups,series:DATA.dann.series,max:100,unit:" %",fmt:v=>v.toFixed(2)});
+
+// Section IV
+groupedBar("ch-ablation",{groups:DATA.ablation.groups,series:DATA.ablation.series,max:100,unit:" %",fmt:v=>v.toFixed(2)});
+
+// Section V
+legend("lg-ece",[{name:"ECE before",color:"var(--m-rf)"},{name:"ECE after",color:"var(--m-hybrid)"}]);
+groupedBar("ch-ece",{groups:DATA.calib.map(r=>r[0]),series:[
+  {name:"ECE before",color:"var(--m-rf)",vals:DATA.calib.map(r=>r[2])},
+  {name:"ECE after", color:"var(--m-hybrid)",vals:DATA.calib.map(r=>r[3])},
+],max:2.5,ticks:[0,0.5,1,1.5,2,2.5],unit:" %",fmt:v=>v.toFixed(2)});
+(function(){const tb=document.getElementById("tb-calib");DATA.calib.forEach(r=>{
+  tb.insertAdjacentHTML("beforeend",`<tr><td>${r[0]}</td><td class="num">${r[1].toFixed(3)}</td><td class="num">${r[2].toFixed(2)}%</td><td class="num">${r[3].toFixed(2)}%</td></tr>`);
+});})();
+
+// Section VI — tabs
+const pcKeys=Object.keys(DATA.perclass);
+const tabsEl=document.getElementById("pc-tabs");
+function renderPC(key){
+  const d=DATA.perclass[key];
+  legend("lg-pc",[{name:"Precision",color:"var(--m-rf)"},{name:"Recall",color:"var(--m-xgb)"},{name:"F1",color:"var(--m-hybrid)"}]);
+  groupedBar("ch-perclass",{groups:d.classes,series:[
+    {name:"Precision",color:"var(--m-rf)",vals:d.p},
+    {name:"Recall",color:"var(--m-xgb)",vals:d.r},
+    {name:"F1",color:"var(--m-hybrid)",vals:d.f},
+  ],max:1,ticks:[0,0.25,0.5,0.75,1],unit:"",fmt:v=>v.toFixed(2)});
+  heatmap("hm-conf",{rows:d.classes,cols:d.classes,matrix:d.conf,mode:"conf",rowTitle:"true",colTitle:"predicted",fmt:v=>v>=1000?(v/1000).toFixed(v>=10000?0:1)+"k":String(v)});
+  document.getElementById("pc-title-metrics").textContent=`Per-class metrics · ${key}`;
+  document.getElementById("pc-note").innerHTML=d.note;
+}
+pcKeys.forEach((k,i)=>{
+  const b=document.createElement("button");b.textContent=k;b.setAttribute("role","tab");
+  b.setAttribute("aria-selected",i===0?"true":"false");
+  b.addEventListener("click",()=>{
+    [...tabsEl.children].forEach(c=>c.setAttribute("aria-selected","false"));
+    b.setAttribute("aria-selected","true");renderPC(k);
+  });
+  tabsEl.appendChild(b);
+});
+renderPC(pcKeys[0]);
+</script>

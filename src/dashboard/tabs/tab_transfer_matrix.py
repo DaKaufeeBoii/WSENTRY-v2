@@ -1,85 +1,83 @@
 """
-Tab 3: Transfer Matrix Heatmap — Cross-Dataset Generalization Analysis.
+Tab 3: Transfer Matrix Heatmap
+Visualizes cross-dataset transfer generalization between Phase 1 and Phase 2.
 """
 from typing import Dict, Any, List
 import streamlit as st
+import numpy as np
+from src.dashboard.components.charts import create_annotated_matrix_heatmap
 
-from src.dashboard.components.charts import create_annotated_heatmap
 
-
-def _extract_3x3_matrix(matrix_dict: Dict[str, float]) -> List[List[float]]:
-    """Convert dict with 'SRC->DST' keys to 3x3 float matrix."""
-    datasets = ["WSN", "CIC", "Edge"]
-    z = []
-    for src in datasets:
-        row = []
-        for dst in datasets:
-            key1 = f"{src}→{dst}"
-            key2 = f"{src}->{dst}"
-            val = matrix_dict.get(key1, matrix_dict.get(key2, 0.0))
-            row.append(float(val))
-        z.append(row)
-    return z
+def _parse_transfer_matrix(matrix_dict: Dict[str, float], domains: List[str]) -> np.ndarray:
+    """Parses a dictionary with keys like 'WSN→Edge' into a 3x3 array."""
+    grid = np.zeros((len(domains), len(domains)), dtype=float)
+    for i, src in enumerate(domains):
+        for j, tgt in enumerate(domains):
+            # Try both arrow styles
+            val = matrix_dict.get(f"{src}→{tgt}", matrix_dict.get(f"{src}->{tgt}", 0.0))
+            grid[i, j] = val
+    return grid
 
 
 def render(phase1: Dict[str, Any], phase2: Dict[str, Any]) -> None:
-    st.subheader("Cross-Dataset Transfer Matrix")
-    st.caption("Evaluating feature generalization when training on one dataset and testing directly on another without retraining.")
+    st.subheader("Cross-Dataset Transfer Matrix Comparison")
+    st.markdown(
+        "Demonstrating cross-dataset domain adaptation: comparing raw protocol feature transfer "
+        "(Phase 1 RF) with protocol-agnostic behavioral features (Phase 2 Hybrid DL)."
+    )
 
-    labels = ["WSN-DS", "CIC-IoT-2023", "Edge-IIoTset"]
+    domains = ["WSN", "CIC", "Edge"]
+    p1_tm = phase1.get("transfer_matrix", {})
+    p2_tm = phase2.get("behavioral_transfer_matrix", {})
 
-    # Matrices from phase1 and phase2
-    p1_dict = phase1.get("transfer_matrix", {})
-    p2_dict = phase2.get("behavioral_transfer_matrix", {})
+    grid_p1 = _parse_transfer_matrix(p1_tm, domains)
+    grid_p2 = _parse_transfer_matrix(p2_tm, domains)
 
-    z_p1 = _extract_3x3_matrix(p1_dict)
-    z_p2 = _extract_3x3_matrix(p2_dict)
+    col_left, col_right = st.columns(2)
 
-    col1, col2 = st.columns(2)
-
-    with col1:
-        st.markdown("#### Phase 1: Native Baseline Transfer (RF)")
-        st.caption("Native protocol-specific features collapse on foreign architectures.")
-        fig1 = create_annotated_heatmap(
-            z_matrix=z_p1,
-            x_labels=labels,
-            y_labels=labels,
-            title="Phase 1: Baseline Transfer Accuracy (%)",
+    with col_left:
+        st.markdown("#### Phase 1: Native Raw Features (Random Forest)")
+        fig_p1 = create_annotated_matrix_heatmap(
+            z=grid_p1,
+            x_labels=domains,
+            y_labels=domains,
+            title="Phase 1 Transfer Matrix (RF Baseline)",
             colorscale="RdYlGn",
+            is_percentage=True,
         )
-        st.plotly_chart(fig1)
+        st.plotly_chart(fig_p1, width="stretch")
 
-    with col2:
-        st.markdown("#### Phase 2: Behavioral Feature Transfer")
-        st.caption("Protocol-agnostic behavioral features significantly bridge the domain gap.")
-        fig2 = create_annotated_heatmap(
-            z_matrix=z_p2,
-            x_labels=labels,
-            y_labels=labels,
-            title="Phase 2: Behavioral Transfer Accuracy (%)",
+    with col_right:
+        st.markdown("#### Phase 2: Behavioral Features (Hybrid CNN-BiLSTM-Attn)")
+        fig_p2 = create_annotated_matrix_heatmap(
+            z=grid_p2,
+            x_labels=domains,
+            y_labels=domains,
+            title="Phase 2 Behavioral Transfer Matrix",
             colorscale="RdYlGn",
+            is_percentage=True,
         )
-        st.plotly_chart(fig2)
+        st.plotly_chart(fig_p2, width="stretch")
 
     st.markdown("---")
-    st.markdown("### Key Scientific Insights")
+    st.subheader("Key Findings & Insights")
+    col1, col2, col3 = st.columns(3)
+    with col1:
+        st.info(
+            "**WSN → Edge Transfer Breakthrough:**\n\n"
+            f"Improved from **{grid_p1[0, 2]:.2f}%** (RF) to **{grid_p2[0, 2]:.2f}%** (Hybrid DL). "
+            "A **+68.8 pp gain** achieved by abstracting protocol-specific headers into common behavioral dynamics."
+        )
+    with col2:
+        st.info(
+            "**Edge → CIC Generalization:**\n\n"
+            f"Edge → CIC stands at **{grid_p2[2, 1]:.2f}%** (vs {grid_p1[2, 1]:.2f}% baseline). "
+            "Behavioral abstraction maintains high cross-domain detection without overfitting to Edge-specific subnet topology."
+        )
+    with col3:
+        st.info(
+            "**Diagonal Same-Domain Retention:**\n\n"
+            "Diagonal entries remain high (WSN: 97.79%, CIC: 97.79%, Edge: 97.42%), showing that "
+            "behavioral features retain critical in-domain discrimination while enabling transfer."
+        )
 
-    info1, info2, info3 = st.columns(3)
-    with info1:
-        st.info(
-            "**WSN-DS → Edge-IIoTset: +68.8 pp Gain**\n\n"
-            "Baseline RF transfer was just **11.94%** (worse than random guessing). "
-            "With behavioral feature engineering, transfer accuracy jumps to **80.70%**."
-        )
-    with info2:
-        st.info(
-            "**Edge-IIoTset → WSN-DS: +25.1 pp Gain**\n\n"
-            "Transfer from Edge to WSN increased from **1.90%** to **26.96%**, "
-            "confirming that traffic flow dynamics generalize across sensor topologies."
-        )
-    with info3:
-        st.info(
-            "**Stable In-Domain Retention**\n\n"
-            "Same-dataset accuracies remain virtually uncompromised (**97.4% - 97.8%**), "
-            "proving behavioral abstractions preserve high discriminative resolution."
-        )

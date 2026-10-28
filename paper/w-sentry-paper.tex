@@ -1,0 +1,336 @@
+\documentclass[conference]{IEEEtran}
+\IEEEoverridecommandlockouts
+
+\usepackage{cite}
+\usepackage{amsmath,amssymb,amsfonts}
+\usepackage{algorithmic}
+\usepackage{graphicx}
+\usepackage{textcomp}
+\usepackage{xcolor}
+\usepackage{booktabs}
+\usepackage{multirow}
+\usepackage{array}
+\usepackage{url}
+
+\def\BibTeX{{\rm B\kern-.05em{\sc i\kern-.025em b}\kern-.08em
+    T\kern-.1667em\lower.7ex\hbox{E}\kern-.125emX}}
+
+\begin{document}
+
+\title{Cross-Domain Transferability of Deep Learning Intrusion Detection: A Multi-Dataset Study with Domain Adversarial Training}
+
+\author{
+\IEEEauthorblockN{M. Vikas Goud, Riteesh Thiruveedhula, Shaik Gafar, V. Sai Tarun Reddy}
+\IEEEauthorblockA{\textit{Department of Computer Science and Engineering -- AIML} \\
+\textit{KG Reddy College of Engineering and Technology}\\
+Hyderabad, India \\
+\{vikas, riteesh, gafar, tarun\}@kgrcet.ac.in}
+\and
+\IEEEauthorblockN{Bapu Sreenivas}
+\IEEEauthorblockA{\textit{Associate Professor, Department of CSE -- AIML} \\
+\textit{KG Reddy College of Engineering and Technology}\\
+Hyderabad, India \\
+bapu.sreenivas@kgrcet.ac.in}
+}
+
+\maketitle
+
+\begin{abstract}
+Wireless intrusion detection systems trained on a single dataset report high accuracy but fail when deployed against traffic from different network environments. We measured this failure directly: a Random Forest trained on WSN-DS scored 99.6\% on its own test set but dropped to 0.18\% when tested on CIC-IoT-2023 traffic. This paper quantifies the cross-dataset domain gap across three wireless/IoT intrusion detection benchmarks -- WSN-DS, CIC-IoT-2023, and Edge-IIoTset -- using a 3$\times$3 transfer matrix. We then evaluate whether a hybrid CNN-BiLSTM-Self-Attention architecture and Domain Adversarial Neural Network (DANN) training can close this gap. Our experiments produced three findings. First, the hybrid deep learning model learns partially transferable representations: WSN-to-Edge transfer accuracy rose from 11.9\% (RF baseline) to 80.7\%. Second, log-scale feature normalization had a larger effect on Edge-IIoTset accuracy than any architectural change, lifting same-dataset performance from 56.8\% to 94.4\%. Third, a two-domain DANN trained jointly on CIC-IoT and Edge-IIoT achieved 96.5\% and 96.3\% accuracy respectively, with no per-dataset fine-tuning. CIC-IoT and WSN-DS remain difficult to bridge because their features originate from different network layers. The code, trained models, and all experimental results are available at the project repository.
+\end{abstract}
+
+\begin{IEEEkeywords}
+intrusion detection, cross-dataset transfer, domain adaptation, CNN-BiLSTM, self-attention, DANN, wireless security, IoT
+\end{IEEEkeywords}
+
+\section{Introduction}
+
+Wireless and IoT networks generate traffic that attackers exploit through jamming, spoofing, denial-of-service flooding, and reconnaissance probing. Intrusion detection systems (IDS) built with machine learning can classify these threats with high accuracy -- often above 95\% -- when training and test data come from the same benchmark dataset~\cite{zhukabayeva2025penetration, phalaagae2025hybrid}.
+
+But datasets differ. WSN-DS~\cite{almomani2016wsn} models LEACH routing protocol attacks in sensor networks. CIC-IoT-2023~\cite{neto2023ciciot} captures TCP/UDP flow-level attacks against IoT devices. Edge-IIoTset~\cite{ferrag2022edge} records multi-protocol industrial IoT traffic including MQTT, Modbus, and HTTP attacks. A model trained on one of these datasets sees feature distributions, label taxonomies, and traffic patterns that may not appear in the others.
+
+Published IDS evaluations rarely test this. A 2025 IEEE Access study by Zhukabayeva et al.~\cite{zhukabayeva2025penetration} combined penetration testing with Random Forest and XGBoost classifiers on IoT traffic but did not evaluate cross-dataset transfer. Sinha et al.~\cite{sinha2025efficient} applied CNN+RNN to multiple benchmarks but trained and tested on each separately. Khan et al.~\cite{khan2025enhancing} tested Transformers and VAE-LSTM on 6G sensor data without cross-protocol evaluation. Terraf et al.~\cite{terraf2026jamming} detected RF jamming using transfer learning but limited their scope to a single attack type.
+
+The gap we address is specific: nobody has systematically measured how much IDS accuracy degrades when the training and deployment environments use different wireless protocols and datasets.
+
+Our contributions:
+
+\begin{enumerate}
+\item A 3$\times$3 cross-dataset transfer matrix quantifying accuracy loss when models trained on one dataset are tested on another, across three benchmarks.
+\item A behavioral feature mapping that projects heterogeneous dataset columns into 20 protocol-agnostic features, enabling meaningful cross-dataset comparison.
+\item Empirical evidence that a hybrid CNN-BiLSTM-Attention model learns partially transferable attack representations, with WSN-to-Edge transfer rising from 11.9\% to 80.7\%.
+\item A two-domain DANN that achieves 96.3-96.5\% accuracy across CIC-IoT and Edge-IIoT without per-dataset tuning.
+\item Evidence that log-scale feature normalization has a larger effect on detection accuracy than model architecture changes, improving Edge-IIoTset from 56.8\% to 94.4\%.
+\end{enumerate}
+
+\section{Related Work}
+
+Table~\ref{tab:literature} summarizes the six studies that inform our work.
+
+\begin{table*}[t]
+\centering
+\caption{Literature Survey}
+\label{tab:literature}
+\small
+\begin{tabular}{p{5cm}p{2.5cm}p{1cm}p{2.5cm}p{2.5cm}p{2.5cm}}
+\toprule
+\textbf{Paper} & \textbf{Authors} & \textbf{Year} & \textbf{Datasets} & \textbf{Approach} & \textbf{Limitation} \\
+\midrule
+Penetration testing + ML for IoT & Zhukabayeva et al. & 2025 & Real-time IoT & RF, XGBoost, Isolation Forest & No deep learning, no cross-dataset \\
+CNN+RNN for WSN IDS & Sinha et al. & 2025 & NSL-KDD, CICIDS, UNSW, CTU-13 & 1D-CNN + RNN & No adaptive mitigation \\
+6G WSN security & Khan et al. & 2025 & Kitsune, 5G-NIDD & Transformer, VAE-LSTM & Limited to 6G scenarios \\
+Application-layer jamming & Terraf et al. & 2026 & Wireless jamming & CNN + transfer learning & Single attack type only \\
+Hybrid ML/DL for Wi-Fi & Duan et al. & 2025 & AWID & CNN vs DNN vs LSTM & Single dataset, no mitigation \\
+CNN-LSTM-Attention IDS & Phalaagae et al. & 2025 & WSN IoT & CNN-LSTM + PSO feature selection & No cross-dataset, no DANN \\
+\bottomrule
+\end{tabular}
+\end{table*}
+
+Phalaagae et al.~\cite{phalaagae2025hybrid} provided the closest architecture to ours, combining CNN and LSTM with attention for wireless IoT sensor network detection. Their work motivated our spatial-temporal-attention pipeline. We extend it in three directions: cross-dataset evaluation, domain adversarial training, and confidence-aware mitigation.
+
+The domain adaptation approach we apply -- DANN with gradient reversal~\cite{ganin2016domain} -- was originally proposed for image classification. Ganin et al. showed that forcing a feature extractor to produce domain-invariant representations via adversarial training improved transfer across visual domains. We apply this technique to network traffic, where ``domains'' are different IDS benchmark datasets.
+
+\section{Datasets and Threat Taxonomy}
+
+We evaluate on three publicly available benchmarks, each representing a different wireless/IoT protocol layer:
+
+\textbf{WSN-DS}~\cite{almomani2016wsn}: 374,661 records from NS-2 simulation of LEACH routing protocol attacks. Features include routing-layer metrics (ADV\_S, DATA\_S, Dist\_To\_CH, energy consumption). Attack types: Blackhole, Grayhole, Flooding, TDMA scheduling disruption.
+
+\textbf{CIC-IoT-2023}~\cite{neto2023ciciot}: Sampled to 199,060 records (stratified from the original 46.7M). Features are transport-layer flow statistics (packet rates, flag counts, IAT, header lengths). 34 attack types including DDoS variants, Mirai botnet, MITM spoofing, and reconnaissance scans.
+
+\textbf{Edge-IIoTset}~\cite{ferrag2022edge}: 157,800 records from the ML-ready subset. Features span TCP/MQTT/Modbus/ICMP packet headers (63 columns, 35 usable numeric). 14 attack types across DDoS, injection, MITM, password attacks, and malware.
+
+All labels are mapped to a unified five-class taxonomy: Normal (0), Jamming (1), Spoofing (2), DoS/Flooding (3), and Intrusion/Probe (4). WSN-DS maps TDMA to Jamming, Blackhole/Grayhole to Spoofing, and Flooding to DoS. CIC-IoT maps DDoS/Mirai variants to DoS, MITM/DNS spoofing to Spoofing, and Recon/Injection/Brute-force to Intrusion. Edge-IIoT maps DDoS variants to DoS, MITM to Spoofing, and SQL injection/XSS/Password/Port scanning to Intrusion.
+
+\section{Methodology}
+
+\subsection{Behavioral Feature Engineering}
+
+Each dataset uses different column names, scales, and semantics. To enable cross-dataset training and evaluation, we project all datasets into a common 20-feature behavioral schema. These features capture protocol-agnostic traffic behavior: volume (total bytes), rate (bytes per time unit), send/receive ratio, control-to-data ratio, acknowledgment and synchronization ratios, connection teardown signals, statistical variability, port diversity, flag intensity, payload ratio, timing (inter-arrival), burstiness, protocol type indicator, energy/throughput proxy, topological distance, node rank, anomaly deviation score, connection state, and IoT protocol activity (MQTT/ARP/DNS).
+
+For WSN-DS, behavioral features are derived from routing counters (DATA\_S, ADV\_R, JOIN\_S) and energy metrics. For CIC-IoT, they map directly from flow statistics (Rate, syn\_count, IAT, Tot\_sum). For Edge-IIoT, they combine TCP header fields (tcp.flags.ack, tcp.connection.syn), MQTT fields (mqtt.len, mqtt.ver), and UDP/DNS/ICMP fields.
+
+For same-dataset evaluation, we also test native features: each dataset's own columns without cross-mapping. Edge-IIoT uses 35 native features selected by between-class variance analysis.
+
+\subsection{Preprocessing}
+
+All features pass through a log-scale normalization:
+\begin{equation}
+x' = \text{sign}(x) \times \log(1 + |x|)
+\end{equation}
+followed by clipping to $[-50, 50]$. This compresses features with extreme dynamic range (e.g., \texttt{tcp.ack\_raw} with values exceeding $10^9$) without destroying relative ordering. RobustScaler (median/IQR) then standardizes the features, fitted only on training data.
+
+Temporal sequences of length $T=5$ are constructed via sliding window for the deep learning models. The dataset is split 70/10/20 (train/validation/test) with stratified sampling.
+
+\subsection{Baseline Models}
+
+Random Forest (100 trees) and XGBoost (100 estimators, depth 6, learning rate 0.1) serve as conventional baselines.
+
+\subsection{Hybrid CNN-BiLSTM-Self-Attention}
+
+The deep model processes (batch, 5, $N_{features}$) sequences through:
+
+\begin{enumerate}
+\item Two Conv1D layers ($N_{features} \rightarrow 32 \rightarrow 64$ channels, kernel size 3, BatchNorm, ReLU, Dropout 0.2) for local feature cross-correlation.
+\item A 2-layer Bidirectional LSTM ($64 \rightarrow 128$ hidden, dropout 0.3) capturing forward and backward temporal dependencies.
+\item Scaled dot-product self-attention (query/key/value projections over the 256-dim BiLSTM output) weighting informative time steps.
+\item Mean pooling over time, followed by Dense($256 \rightarrow 128$, ReLU, Dropout 0.3) and Dense($128 \rightarrow N_{classes}$).
+\end{enumerate}
+
+Training uses AdamW (lr=$10^{-3}$, weight decay=$10^{-4}$), ReduceLROnPlateau scheduler, and class-weighted CrossEntropyLoss with weights capped at [0.5, 5.0] to handle class imbalance without overcorrection.
+
+\subsection{Domain Adversarial Neural Network}
+
+DANN~\cite{ganin2016domain} adds a domain discriminator branch to the feature extractor:
+
+\begin{itemize}
+\item The shared feature extractor (CNN-BiLSTM-Attention up to the 256-dim representation) feeds both a threat classifier ($256 \rightarrow 5$ classes) and a domain discriminator ($256 \rightarrow N_{domains}$) via a gradient reversal layer.
+\item During backpropagation, gradients flowing through the reversal layer are multiplied by $-\alpha$, forcing the feature extractor to produce representations that the domain discriminator cannot distinguish.
+\item Alpha follows a sigmoid schedule:
+\begin{equation}
+\alpha = \frac{2}{1 + \exp(-5p)} - 1
+\end{equation}
+where $p = \text{epoch}/\text{max\_epochs}$.
+\end{itemize}
+
+Training proceeds in two phases: 8 epochs of pre-training ($\alpha=0$, threat classifier only) followed by 25 epochs of adversarial training with ramping $\alpha$ and $\lambda_{domain}=0.1$.
+
+\subsection{Confidence Calibration}
+
+Post-hoc temperature scaling learns a single parameter $T$ on the validation set by minimizing NLL of $\text{softmax}(\text{logits}/T)$. Expected Calibration Error (ECE) is measured with 15 bins.
+
+\section{Experiments and Results}
+
+\subsection{Experiment 1: Same-Dataset Performance}
+
+\begin{table}[h]
+\centering
+\caption{Same-Dataset Classification Accuracy}
+\label{tab:same-dataset}
+\begin{tabular}{lccc}
+\toprule
+\textbf{Dataset} & \textbf{RF} & \textbf{XGBoost} & \textbf{Hybrid DL} \\
+\midrule
+WSN-DS & 99.60\% & 99.56\% & 98.06\% \\
+CIC-IoT-2023 & 99.42\% & 99.44\% & 97.80\% \\
+Edge-IIoTset & 92.06\% & 91.92\% & \textbf{94.39\%} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+RF and XGBoost outperform the hybrid model on WSN-DS and CIC-IoT by 1-2 points. On Edge-IIoTset, the hybrid model scores 94.39\% vs RF's 92.06\%. The advantage comes from class weighting: RF struggles with the Spoofing class (only 1,214 MITM samples out of 157,800) while the weighted CrossEntropyLoss forces the neural network to learn minority classes.
+
+\subsection{Experiment 2: Cross-Dataset Transfer (RF Baseline)}
+
+\begin{table}[h]
+\centering
+\caption{RF Transfer Matrix (Accuracy \%)}
+\label{tab:rf-transfer}
+\begin{tabular}{lccc}
+\toprule
+\textbf{Train $\backslash$ Test} & \textbf{WSN-DS} & \textbf{CIC-IoT} & \textbf{Edge-IIoT} \\
+\midrule
+WSN-DS & \textbf{99.60} & 0.18 & 11.94 \\
+CIC-IoT & 1.26 & \textbf{99.42} & 26.30 \\
+Edge-IIoT & 1.90 & 67.64 & \textbf{92.06} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Average off-diagonal accuracy: 18.2\%. The diagonal (same-dataset) averages 97.0\%. The domain gap averages 78.8 percentage points.
+
+Edge-to-CIC transfer (67.6\%) partially succeeds because both datasets share transport-layer flow features (packet rates, TCP flags). WSN-DS uses routing-layer metrics with no analog in CIC-IoT or Edge-IIoT, explaining the near-zero transfer in both directions.
+
+\subsection{Experiment 3: Cross-Dataset Transfer (Hybrid DL)}
+
+\begin{table}[h]
+\centering
+\caption{Hybrid DL Transfer Matrix (Accuracy \%, behavioral features)}
+\label{tab:hybrid-transfer}
+\begin{tabular}{lccc}
+\toprule
+\textbf{Train $\backslash$ Test} & \textbf{WSN-DS} & \textbf{CIC-IoT} & \textbf{Edge-IIoT} \\
+\midrule
+WSN-DS & \textbf{97.79} & 0.30 & \textbf{80.70} \\
+CIC-IoT & 0.99 & \textbf{97.79} & 15.40 \\
+Edge-IIoT & 26.96 & \textbf{61.77} & \textbf{97.42} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+The hybrid model dramatically improves WSN-to-Edge transfer: 11.94\% (RF) to 80.70\% (DL). Edge-to-CIC drops from 67.64\% to 61.77\%, suggesting the deep model overfits to dataset-specific patterns that RF's simpler decision boundaries do not learn.
+
+\textbf{Evaluation protocol for off-diagonal cells.} Cross-dataset accuracy is computed over the intersection of the source and target label sets: the target test set is masked to the classes the source model can emit, and that intersection differs for each dataset pair. Predictions falling outside the source model's label map are counted as errors. This applies to both Table III and Table IV, so off-diagonal cells are not directly comparable to the diagonal, which is evaluated on the target's full test set.
+
+The asymmetry between WSN-to-Edge (80.7\%) and Edge-to-WSN (27.0\%) is notable. The WSN-trained model generalizes its routing-derived behavioral features to Edge traffic, but the reverse does not hold -- Edge's transport-layer patterns do not map back to WSN routing semantics cleanly.
+
+\subsection{Experiment 4: DANN Two-Domain (CIC + Edge)}
+
+Training DANN on all three datasets simultaneously did not converge well because WSN-DS features are too different from the other two. We instead trained a two-domain DANN on CIC-IoT and Edge-IIoT jointly.
+
+\begin{table}[h]
+\centering
+\caption{DANN 2-Domain Results}
+\label{tab:dann}
+\begin{tabular}{lcc}
+\toprule
+ & \textbf{CIC-IoT} & \textbf{Edge-IIoT} \\
+\midrule
+Per-dataset Hybrid DL & 97.79\% & 97.42\% \\
+DANN (joint, no fine-tuning) & \textbf{96.50\%} & \textbf{96.29\%} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+The ``Per-dataset Hybrid DL'' row is the behavioral-feature diagonal from Table IV (97.79\% CIC, 97.42\% Edge), not the native-feature results in Table II (97.80\% CIC, 94.39\% Edge). DANN achieves 96.3-96.5\% on both datasets from a single model with no per-dataset tuning. The 1-1.3 point accuracy cost compared to per-dataset training buys cross-domain robustness.
+
+The three-domain DANN (including WSN-DS) failed to converge: threat accuracy plateaued at 55\% with domain accuracy oscillating between 33\% (random) and 67\%. This confirms that gradient reversal cannot bridge fundamentally different feature spaces -- it works only when the underlying features share enough structure for domain-invariant patterns to exist.
+
+\subsection{Experiment 5: Ablation -- Log Normalization}
+
+The largest single accuracy gain came not from architecture but from preprocessing.
+
+\begin{table}[h]
+\centering
+\caption{Effect of Log Normalization on Edge-IIoTset}
+\label{tab:log-norm}
+\begin{tabular}{lc}
+\toprule
+\textbf{Preprocessing} & \textbf{Edge Acc} \\
+\midrule
+Clip to $[-10^9, 10^9]$ + RobustScaler & 56.80\% \\
+Log transform + clip $[-50, 50]$ + RobustScaler & \textbf{94.39\%} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+The \texttt{tcp.ack\_raw} column (mean 1.7 billion, std 1.4 billion) overwhelmed RobustScaler without log compression. After log transform, its effective range compresses to [0, 21.3], making it comparable to other features.
+
+\subsection{Experiment 6: Confidence Calibration}
+
+\begin{table}[h]
+\centering
+\caption{Temperature Scaling Results}
+\label{tab:calibration}
+\begin{tabular}{lccc}
+\toprule
+\textbf{Dataset} & \textbf{Temp T} & \textbf{ECE Before} & \textbf{ECE After} \\
+\midrule
+WSN-DS & 1.040 & 1.70\% & 1.86\% \\
+CIC-IoT & 1.495 & 0.23\% & 0.43\% \\
+Edge-IIoT & 1.077 & 1.78\% & 2.04\% \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+The models are well-calibrated before temperature scaling (ECE $<$ 2\%). CIC-IoT's temperature of 1.495 indicates its softmax probabilities are overconfident; scaling helps in principle but the already-low ECE means the practical effect is small.
+
+\section{Discussion}
+
+\subsection{Findings}
+
+The core finding is that cross-dataset IDS transfer depends more on feature-layer compatibility than on model architecture. WSN-DS and Edge-IIoT share enough behavioral signal (volume, rate, burstiness) for the deep model to transfer at 80.7\% accuracy -- a 68.8-point improvement over RF. CIC-IoT sits between the two: it shares transport features with Edge-IIoT but not routing features with WSN-DS.
+
+DANN works when the two domains share structural overlap (CIC + Edge: both have TCP/UDP/ICMP features). It fails when they do not (adding WSN-DS: routing metrics have no analog). This is consistent with the original DANN literature~\cite{ganin2016domain}, which showed domain adaptation works best between related domains.
+
+The log normalization finding suggests that many reported accuracy numbers in the IDS literature may be sensitive to preprocessing choices that go unreported. A 37.6-point accuracy swing from a single line of preprocessing code ($\text{sign}(x) \times \log(1+|x|)$) should concern any researcher comparing models across studies.
+
+\subsection{Limitations}
+
+WSN-DS uses simulated NS-2 traffic, not real sensor network captures. CIC-IoT-2023 was subsampled from 46.7M to 199K records for computational feasibility. The mitigation engine responses are simulated at the application layer, not tested on live network infrastructure. The Spoofing class in Edge-IIoTset has only 1,214 samples (MITM attacks), limiting evaluation confidence for that class.
+
+\section{Conclusion}
+
+We measured the cross-dataset domain gap in wireless IDS across three benchmarks and found it averages 78.8 percentage points for RF classifiers. A hybrid CNN-BiLSTM-Attention model reduces this gap substantially for protocol-compatible datasets, with WSN-to-Edge transfer reaching 80.7\%. Domain adversarial training achieves 96.3-96.5\% jointly across CIC-IoT and Edge-IIoT without per-dataset fine-tuning. Log-scale feature normalization contributed more to accuracy than any architectural change.
+
+For researchers building IDS systems: report cross-dataset transfer numbers alongside same-dataset accuracy. A 99\% accuracy number from a single-dataset evaluation tells you nothing about how that model will perform on traffic it was not trained on.
+
+\begin{thebibliography}{00}
+
+\bibitem{zhukabayeva2025penetration} T. Zhukabayeva, Z. Ahmed, A. Adamova, N. Karbayev, Y. Mardenov, and D. Satybaldina, ``Penetration Testing and Machine Learning-Driven Cybersecurity Framework for IoT and Smart City Wireless Networks,'' \textit{IEEE Access}, vol. 13, pp. 1-16, 2025.
+
+\bibitem{almomani2016wsn} I. Almomani, B. Al-Kasasbeh, and M. Al-Akhras, ``WSN-DS: A Dataset for Intrusion Detection Systems in Wireless Sensor Networks,'' \textit{Journal of Sensors}, vol. 2016, Article 4731953, 2016.
+
+\bibitem{neto2023ciciot} E. C. P. Neto et al., ``CICIoT2023: A Real-Time Dataset and Benchmark for Large-Scale Attacks in IoT Environment,'' \textit{Sensors}, vol. 23, no. 13, 2023.
+
+\bibitem{ferrag2022edge} M. A. Ferrag, O. Friha, D. Hamouda, L. Maglaras, and H. Janicke, ``Edge-IIoTset: A New Comprehensive Realistic Cyber Security Dataset of IoT and IIoT Applications,'' \textit{IEEE Access}, vol. 10, pp. 40281-40306, 2022.
+
+\bibitem{sinha2025efficient} P. Sinha, D. Sahu, S. Prakash et al., ``An efficient data driven framework for intrusion detection in wireless sensor networks using deep learning,'' \textit{Scientific Reports}, vol. 15, no. 1, 2025.
+
+\bibitem{khan2025enhancing} W. Khan, M. Usama, M. S. Khan et al., ``Enhancing security in 6G-enabled wireless sensor networks for smart cities: a multi-deep learning intrusion detection approach,'' \textit{Frontiers in Sustainable Cities}, vol. 7, 2025.
+
+\bibitem{terraf2026jamming} Y. Terraf, Y. Iraqi, A. Al-Dweik et al., ``Jamming Detection at the Application Layer Using Deep Learning: A Transfer Learning Approach,'' \textit{IEEE Open Journal of the Communications Society}, vol. 7, 2026.
+
+\bibitem{duan2025enhancing} K. Duan et al., ``Enhancing cybersecurity: network intrusion detection with hybrid machine learning and deep learning approaches,'' \textit{International Journal of Information and Communication Technology}, vol. 26, no. 3, 2025.
+
+\bibitem{phalaagae2025hybrid} P. Phalaagae, A. M. Zungeru, A. Yahya, B. Sigweni, and S. Rajalakshmi, ``A Hybrid CNN-LSTM Model With Attention Mechanism for Improved Intrusion Detection in Wireless IoT Sensor Networks,'' \textit{IEEE Access}, vol. 13, pp. 57322-57341, 2025, doi: 10.1109/ACCESS.2025.3555861.
+
+\bibitem{ganin2016domain} Y. Ganin et al., ``Domain-Adversarial Training of Neural Networks,'' \textit{Journal of Machine Learning Research}, vol. 17, no. 59, pp. 1-35, 2016.
+
+\bibitem{ferrag2020deep} M. A. Ferrag, L. Maglaras, S. Moschoyiannis, and H. Janicke, ``Deep Learning for Cyber Security Intrusion Detection: Approaches, Datasets, and Comparative Study,'' \textit{Journal of Information Security and Applications}, vol. 50, 102419, 2020.
+
+\end{thebibliography}
+
+\vspace{12pt}
+
+\end{document}

@@ -1,30 +1,22 @@
 """
-Background daemon thread for real-time batched model inference and mitigation triggering.
+Background inference thread integrating PacketBuffer, InferenceEngine, and MitigationEngine.
 """
-import logging
-import threading
 import time
-from typing import Any, List
-
+import threading
+from typing import Optional
 import numpy as np
 
-from src.data.dataset_loader import FEATURE_COLS
 from src.live.buffer import PacketBuffer, PacketRecord
 from src.live.inference import InferenceEngine
 from src.live.mitigation import MitigationEngine
-
-logger = logging.getLogger("w_sentry.inference_thread")
+from src.data.dataset_loader import FEATURE_COLS
 
 
 class InferenceThread(threading.Thread):
     """
-    Background daemon thread that:
-    1. Polls PacketBuffer for records with prediction == -1.
-    2. Batches up to batch_size records for inference.
-    3. Calls InferenceEngine.predict_batch().
-    4. Updates records in-place with prediction, confidence, label.
-    5. Dispatches threat records to MitigationEngine.respond().
-    6. Sleeps poll_interval between loops.
+    Asynchronous daemon thread continuously consuming unclassified packet records
+    from the PacketBuffer, running batched model inference, updating records,
+    and triggering automated mitigation rules on threats.
     """
 
     def __init__(
@@ -34,74 +26,62 @@ class InferenceThread(threading.Thread):
         mitigation: MitigationEngine,
         poll_interval: float = 0.1,
         batch_size: int = 32,
-        scaler: Any = None,
+        time_steps: int = 5,
     ) -> None:
-        super().__init__(daemon=True, name="WSentryInferenceThread")
+        super().__init__(daemon=True)
         self.buffer = buffer
         self.engine = engine
         self.mitigation = mitigation
         self.poll_interval = poll_interval
         self.batch_size = batch_size
-        self._running = False
-
-        if scaler is None:
-            from src.live.feature_extractor import LiveFeatureExtractor
-            try:
-                self.scaler = LiveFeatureExtractor().scaler
-            except Exception:
-                self.scaler = None
-        else:
-            self.scaler = scaler
-
-    def start(self) -> None:
-        self._running = True
-        super().start()
+        self.time_steps = time_steps
+        self._stop_event = threading.Event()
+        self.is_running = False
 
     def stop(self) -> None:
-        self._running = False
+        self.is_running = False
+        self._stop_event.set()
 
     def run(self) -> None:
-        self._running = True
-        logger.info("InferenceThread started.")
+        self.is_running = True
+        while not self._stop_event.is_set():
+            records = self.buffer.get_unclassified(limit=self.batch_size)
+            if not records:
+                time.sleep(self.poll_interval)
+                continue
 
-        while self._running:
-            try:
-                # Fetch pending unclassified records
-                batch = self.buffer.get_unclassified(max_batch=self.batch_size)
-                if not batch:
-                    time.sleep(self.poll_interval)
+            batch_tensors = []
+            valid_records = []
+
+            for rec in records:
+                raw = rec.raw_features
+                if not raw:
+                    # Mark as Normal if empty
+                    self.buffer.update_record(rec, prediction=0, confidence=0.99, label="Normal")
                     continue
 
-                # Prepare feature tensor of shape (batch_size, 5, 20)
-                seq_list = []
-                for rec in batch:
-                    raw_vec = [rec.raw_features.get(col, 0.0) for col in FEATURE_COLS]
-                    # Log-transform and clip matching pipeline
-                    raw_arr = np.array(raw_vec, dtype=np.float32)
-                    log_arr = np.sign(raw_arr) * np.log1p(np.abs(raw_arr))
-                    clip_arr = np.clip(log_arr, -50.0, 50.0)
+                # Prepare feature vector (20 features)
+                vec = [float(raw.get(col, 0.0)) for col in FEATURE_COLS]
+                # Replicate across time_steps to form (time_steps, 20)
+                seq = np.tile(vec, (self.time_steps, 1)).astype(np.float32)
+                # Log normalization and clip
+                seq = np.sign(seq) * np.log1p(np.abs(seq))
+                seq = np.clip(seq, -50.0, 50.0)
+                batch_tensors.append(seq)
+                valid_records.append(rec)
 
-                    # Scale using real fitted RobustScaler
-                    if self.scaler is not None:
-                        scaled_arr = self.scaler.transform(clip_arr.reshape(1, -1))[0].astype(np.float32)
-                    else:
-                        scaled_arr = clip_arr.astype(np.float32)
+            if batch_tensors:
+                batch_arr = np.array(batch_tensors, dtype=np.float32)
+                predictions = self.engine.predict_batch(batch_arr)
 
-                    # Tile across 5 time steps matching (batch, 5, 20)
-                    seq = np.tile(scaled_arr, (5, 1))
-                    seq_list.append(seq)
+                for rec, (pred_class, conf, label) in zip(valid_records, predictions):
+                    self.buffer.update_record(rec, prediction=pred_class, confidence=conf, label=label)
 
-                features_batch = np.stack(seq_list, axis=0)
-                predictions = self.engine.predict_batch(features_batch)
-
-                # Update buffer records and trigger mitigation for threats
-                for rec, (pred_cls, conf, label) in zip(batch, predictions):
-                    self.buffer.update_prediction(rec, pred_cls, conf, label)
-                    if pred_cls > 0:
+                    # Trigger mitigation if threat
+                    if pred_class > 0:
                         self.mitigation.respond(rec)
 
-            except Exception as e:
-                logger.error(f"Inference error in background thread: {e}")
-                time.sleep(self.poll_interval)
+            # Periodic cleanup of expired firewall rules
+            self.mitigation.cleanup_expired(max_age_seconds=300.0)
+            time.sleep(self.poll_interval)
 
-        logger.info("InferenceThread stopped.")

@@ -1,0 +1,509 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>W-SENTRY IEEE Paper Preview</title>
+<style>
+body {
+  font-family: 'Times New Roman', serif;
+  margin: 0;
+  padding: 20px;
+  background: #f0f0f0;
+}
+.page {
+  width: 8.5in;
+  min-height: 11in;
+  background: white;
+  margin: 0 auto 20px;
+  padding: 0.75in;
+  box-shadow: 0 0 10px rgba(0,0,0,0.3);
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.25in;
+  font-size: 10pt;
+  line-height: 1.4;
+}
+.full-width {
+  grid-column: 1 / -1;
+}
+.title {
+  font-size: 14pt;
+  font-weight: bold;
+  text-align: center;
+  margin-bottom: 10pt;
+}
+.authors {
+  text-align: center;
+  font-size: 10pt;
+  margin-bottom: 5pt;
+}
+.affiliation {
+  text-align: center;
+  font-size: 9pt;
+  font-style: italic;
+  margin-bottom: 10pt;
+}
+.abstract {
+  font-size: 9pt;
+  margin: 10pt 0;
+  text-align: justify;
+}
+.abstract-title {
+  font-weight: bold;
+}
+.keywords {
+  font-size: 9pt;
+  font-style: italic;
+}
+h2 {
+  font-size: 11pt;
+  font-weight: bold;
+  text-transform: uppercase;
+  margin: 12pt 0 6pt;
+}
+h3 {
+  font-size: 10pt;
+  font-weight: bold;
+  font-style: italic;
+  margin: 8pt 0 4pt;
+}
+p {
+  text-align: justify;
+  margin-bottom: 8pt;
+}
+table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 10pt 0;
+  font-size: 8pt;
+}
+table caption {
+  font-weight: bold;
+  margin-bottom: 4pt;
+  text-align: left;
+}
+th, td {
+  border-top: 1px solid #000;
+  border-bottom: 1px solid #000;
+  padding: 2pt 4pt;
+  text-align: left;
+}
+thead th {
+  border-bottom: 1.5px solid #000;
+}
+.equation {
+  text-align: center;
+  margin: 10pt 0;
+  font-style: italic;
+}
+.ref {
+  font-size: 8pt;
+  line-height: 1.3;
+  margin-bottom: 4pt;
+}
+.page-number {
+  grid-column: 1 / -1;
+  text-align: center;
+  margin-top: 10pt;
+  font-size: 9pt;
+}
+</style>
+</head>
+<body>
+
+<!-- Page 1 -->
+<div class="page">
+  <div class="full-width title">
+    Cross-Domain Transferability of Deep Learning Intrusion Detection:<br>
+    A Multi-Dataset Study with Domain Adversarial Training
+  </div>
+  
+  <div class="full-width authors">
+    M. Vikas Goud, Riteesh Thiruveedhula, Shaik Gafar, V. Sai Tarun Reddy
+  </div>
+  
+  <div class="full-width affiliation">
+    Department of Computer Science and Engineering -- AIML<br>
+    KG Reddy College of Engineering and Technology, Hyderabad, India<br>
+    {vikas, riteesh, gafar, tarun}@kgrcet.ac.in
+  </div>
+  
+  <div class="full-width affiliation">
+    Bapu Sreenivas<br>
+    Associate Professor, Department of CSE -- AIML<br>
+    KG Reddy College of Engineering and Technology<br>
+    bapu.sreenivas@kgrcet.ac.in
+  </div>
+  
+  <div class="full-width abstract">
+    <div class="abstract-title">Abstract—</div>
+    Wireless intrusion detection systems trained on a single dataset report high accuracy but fail when deployed against traffic from different network environments. We measured this failure directly: a Random Forest trained on WSN-DS scored 99.6% on its own test set but dropped to 0.18% when tested on CIC-IoT-2023 traffic. This paper quantifies the cross-dataset domain gap across three wireless/IoT intrusion detection benchmarks using a 3×3 transfer matrix. Our experiments produced three findings. First, the hybrid deep learning model learns partially transferable representations: WSN-to-Edge transfer accuracy rose from 11.9% to 80.7%. Second, log-scale feature normalization had a larger effect on Edge-IIoTset accuracy than any architectural change, lifting same-dataset performance from 56.8% to 94.4%. Third, a two-domain DANN trained jointly on CIC-IoT and Edge-IIoT achieved 96.5% and 96.3% accuracy respectively.
+  </div>
+  
+  <div class="full-width keywords">
+    <b>Keywords—</b> intrusion detection, cross-dataset transfer, domain adaptation, CNN-BiLSTM, self-attention, DANN, wireless security, IoT
+  </div>
+  
+  <div>
+    <h2>I. Introduction</h2>
+    <p>Wireless and IoT networks generate traffic that attackers exploit through jamming, spoofing, denial-of-service flooding, and reconnaissance probing. Intrusion detection systems (IDS) built with machine learning can classify these threats with high accuracy when training and test data come from the same benchmark dataset [1], [11].</p>
+    
+    <p>But datasets differ. WSN-DS [2] models LEACH routing protocol attacks in sensor networks. CIC-IoT-2023 [3] captures TCP/UDP flow-level attacks. Edge-IIoTset [4] records multi-protocol industrial IoT traffic. A model trained on one dataset sees feature distributions that may not appear in others.</p>
+    
+    <p>Our contributions:<br>
+    1. A 3×3 cross-dataset transfer matrix<br>
+    2. Behavioral feature mapping (20 features)<br>
+    3. WSN-to-Edge transfer: 11.9% → 80.7%<br>
+    4. Two-domain DANN: 96.3-96.5% accuracy<br>
+    5. Log normalization: 56.8% → 94.4%</p>
+    
+    <h2>II. Related Work</h2>
+    
+    <table>
+      <caption>TABLE I: Literature Survey</caption>
+      <thead>
+        <tr>
+          <th>Paper</th>
+          <th>Year</th>
+          <th>Approach</th>
+          <th>Limitation</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Zhukabayeva et al.</td>
+          <td>2025</td>
+          <td>RF, XGBoost</td>
+          <td>No cross-dataset</td>
+        </tr>
+        <tr>
+          <td>Sinha et al.</td>
+          <td>2025</td>
+          <td>CNN+RNN</td>
+          <td>No mitigation</td>
+        </tr>
+        <tr>
+          <td>Khan et al.</td>
+          <td>2025</td>
+          <td>Transformer</td>
+          <td>6G only</td>
+        </tr>
+        <tr>
+          <td>Phalaagae et al.</td>
+          <td>2025</td>
+          <td>CNN-LSTM+Attn</td>
+          <td>No DANN</td>
+        </tr>
+      </tbody>
+    </table>
+    
+    <p>Phalaagae et al. [9] provided the closest architecture, combining CNN and LSTM with attention. We extend it with cross-dataset evaluation and domain adversarial training.</p>
+  </div>
+  
+  <div>
+    <h2>III. Datasets</h2>
+    <p><b>WSN-DS:</b> 374,661 records from NS-2 LEACH simulation. Routing-layer metrics (ADV_S, DATA_S, energy). Attacks: Blackhole, Grayhole, Flooding, TDMA.</p>
+    
+    <p><b>CIC-IoT-2023:</b> 199,060 records (stratified). Transport-layer flow statistics. 34 attack types including DDoS, Mirai, MITM, recon.</p>
+    
+    <p><b>Edge-IIoTset:</b> 157,800 records. TCP/MQTT/Modbus/ICMP headers (35 usable features). 14 attack types.</p>
+    
+    <p>All mapped to 5 classes: Normal, Jamming, Spoofing, DoS, Intrusion.</p>
+    
+    <h2>IV. Methodology</h2>
+    
+    <h3>A. Behavioral Features</h3>
+    <p>20 protocol-agnostic features: volume, rate, send/receive ratio, timing, burstiness, port diversity, flag intensity, etc.</p>
+    
+    <h3>B. Preprocessing</h3>
+    <div class="equation">
+      x' = sign(x) × log(1 + |x|)
+    </div>
+    <p>Followed by RobustScaler. Sequences: T=5 timesteps.</p>
+    
+    <h3>C. Baseline: RF + XGBoost</h3>
+    
+    <h3>D. Hybrid CNN-BiLSTM-Attention</h3>
+    <p>Architecture: Conv1D (32→64) → BiLSTM (128 hidden, 2 layers) → Self-Attention → Dense (256→128→5).</p>
+  </div>
+  
+  <div class="full-width page-number">1</div>
+</div>
+
+<!-- Page 2 -->
+<div class="page">
+  <div>
+    <h3>E. Domain Adversarial (DANN)</h3>
+    <p>Gradient reversal layer: multiply by -α during backprop. Alpha schedule:</p>
+    <div class="equation">
+      α = 2/(1 + exp(-5p)) - 1
+    </div>
+    <p>Pre-training: 8 epochs (α=0), then 25 epochs adversarial.</p>
+    
+    <h3>F. Calibration</h3>
+    <p>Temperature scaling: minimize NLL of softmax(logits/T). ECE measured with 15 bins.</p>
+    
+    <h2>V. Experiments</h2>
+    
+    <h3>A. Same-Dataset Performance</h3>
+    
+    <table>
+      <caption>TABLE II: Same-Dataset Accuracy</caption>
+      <thead>
+        <tr>
+          <th>Dataset</th>
+          <th>RF</th>
+          <th>XGB</th>
+          <th>Hybrid DL</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>WSN-DS</td>
+          <td>99.60%</td>
+          <td>99.56%</td>
+          <td>98.06%</td>
+        </tr>
+        <tr>
+          <td>CIC-IoT</td>
+          <td>99.42%</td>
+          <td>99.44%</td>
+          <td>97.80%</td>
+        </tr>
+        <tr>
+          <td>Edge-IIoT</td>
+          <td>92.06%</td>
+          <td>91.92%</td>
+          <td><b>94.39%</b></td>
+        </tr>
+      </tbody>
+    </table>
+    
+    <p>The hybrid model outperforms RF on Edge-IIoTset due to class-weighted loss handling minority classes (Spoofing: 1,214 samples).</p>
+    
+    <h3>B. Cross-Dataset (RF Baseline)</h3>
+    
+    <table>
+      <caption>TABLE III: RF Transfer Matrix (%)</caption>
+      <thead>
+        <tr>
+          <th>Train \ Test</th>
+          <th>WSN</th>
+          <th>CIC</th>
+          <th>Edge</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>WSN</td>
+          <td><b>99.60</b></td>
+          <td>0.18</td>
+          <td>11.94</td>
+        </tr>
+        <tr>
+          <td>CIC</td>
+          <td>1.26</td>
+          <td><b>99.42</b></td>
+          <td>26.30</td>
+        </tr>
+        <tr>
+          <td>Edge</td>
+          <td>1.90</td>
+          <td>67.64</td>
+          <td><b>92.06</b></td>
+        </tr>
+      </tbody>
+    </table>
+    
+    <p>Average off-diagonal: 18.2%. Domain gap: 78.8 points. Edge-to-CIC (67.6%) succeeds because both share transport features.</p>
+  </div>
+  
+  <div>
+    <h3>C. Cross-Dataset (Hybrid DL)</h3>
+    
+    <table>
+      <caption>TABLE IV: Hybrid DL Transfer Matrix (%)</caption>
+      <thead>
+        <tr>
+          <th>Train \ Test</th>
+          <th>WSN</th>
+          <th>CIC</th>
+          <th>Edge</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>WSN</td>
+          <td><b>97.79</b></td>
+          <td>0.30</td>
+          <td><b>80.70</b></td>
+        </tr>
+        <tr>
+          <td>CIC</td>
+          <td>0.99</td>
+          <td><b>97.79</b></td>
+          <td>15.40</td>
+        </tr>
+        <tr>
+          <td>Edge</td>
+          <td>26.96</td>
+          <td><b>61.77</b></td>
+          <td><b>97.42</b></td>
+        </tr>
+      </tbody>
+    </table>
+    
+    <p>WSN-to-Edge: 11.94% → 80.70% (68.8-point gain). Edge-to-CIC dropped to 61.77%, suggesting overfitting to dataset-specific patterns.</p>
+    
+    <h3>D. DANN Two-Domain</h3>
+    
+    <table>
+      <caption>TABLE V: DANN 2-Domain Results</caption>
+      <thead>
+        <tr>
+          <th></th>
+          <th>CIC</th>
+          <th>Edge</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Per-dataset DL</td>
+          <td>97.79%</td>
+          <td>97.42%</td>
+        </tr>
+        <tr>
+          <td>DANN (joint)</td>
+          <td><b>96.50%</b></td>
+          <td><b>96.29%</b></td>
+        </tr>
+      </tbody>
+    </table>
+    
+    <p>The per-dataset row is the behavioral-feature diagonal from Table IV (97.79% CIC, 97.42% Edge), not the native-feature results in Table II (97.80% CIC, 94.39% Edge). DANN achieves 96.3-96.5% from a single model with no per-dataset tuning. The 1-1.3 point cost buys cross-domain robustness.</p>
+    
+    <p>Three-domain DANN (including WSN) failed: threat accuracy plateaued at 55%. Gradient reversal cannot bridge fundamentally different feature spaces.</p>
+    
+    <h3>E. Log Normalization Ablation</h3>
+    
+    <table>
+      <caption>TABLE VI: Effect of Log Normalization</caption>
+      <thead>
+        <tr>
+          <th>Preprocessing</th>
+          <th>Edge Acc</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Clip + RobustScaler</td>
+          <td>56.80%</td>
+        </tr>
+        <tr>
+          <td>Log + Clip + RobustScaler</td>
+          <td><b>94.39%</b></td>
+        </tr>
+      </tbody>
+    </table>
+    
+    <p>tcp.ack_raw (mean 1.7B) overwhelmed scaler. After log transform, range compresses to [0, 21.3].</p>
+  </div>
+  
+  <div class="full-width page-number">2</div>
+</div>
+
+<!-- Page 3 (Summary) -->
+<div class="page">
+  <div>
+    <h3>F. Confidence Calibration</h3>
+    
+    <table>
+      <caption>TABLE VII: Temperature Scaling</caption>
+      <thead>
+        <tr>
+          <th>Dataset</th>
+          <th>Temp T</th>
+          <th>ECE Before</th>
+          <th>ECE After</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>WSN</td>
+          <td>1.040</td>
+          <td>1.70%</td>
+          <td>1.86%</td>
+        </tr>
+        <tr>
+          <td>CIC</td>
+          <td>1.495</td>
+          <td>0.23%</td>
+          <td>0.43%</td>
+        </tr>
+        <tr>
+          <td>Edge</td>
+          <td>1.077</td>
+          <td>1.78%</td>
+          <td>2.04%</td>
+        </tr>
+      </tbody>
+    </table>
+    
+    <p>Models are well-calibrated (ECE < 2%). CIC's T=1.495 indicates overconfident softmax.</p>
+    
+    <h2>VI. Discussion</h2>
+    
+    <p>Cross-dataset IDS transfer depends more on feature-layer compatibility than model architecture. WSN-DS and Edge-IIoT share behavioral signals (volume, rate, burstiness) enabling 80.7% transfer. CIC-IoT shares transport features with Edge but not routing with WSN.</p>
+    
+    <p>DANN works when domains share structural overlap (CIC + Edge: both have TCP/UDP features). It fails when they don't (adding WSN: routing metrics have no analog).</p>
+    
+    <p>The log normalization finding suggests many IDS accuracy numbers may be sensitive to unreported preprocessing. A 37.6-point swing from one line of code should concern researchers.</p>
+    
+    <p><b>Limitations:</b> WSN-DS uses simulated NS-2 traffic. CIC-IoT subsampled from 46.7M to 199K. Mitigation responses are simulated. Spoofing class has only 1,214 samples.</p>
+  </div>
+  
+  <div>
+    <h2>VII. Conclusion</h2>
+    
+    <p>We measured the cross-dataset domain gap in wireless IDS across three benchmarks and found it averages 78.8 percentage points for RF classifiers. A hybrid CNN-BiLSTM-Attention model reduces this gap substantially for protocol-compatible datasets, with WSN-to-Edge transfer reaching 80.7%. Domain adversarial training achieves 96.3-96.5% jointly across CIC-IoT and Edge-IIoT. Log-scale feature normalization contributed more to accuracy than any architectural change.</p>
+    
+    <p>For researchers building IDS systems: report cross-dataset transfer numbers alongside same-dataset accuracy. A 99% accuracy number from a single-dataset evaluation tells you nothing about deployment performance.</p>
+    
+    <h2>References</h2>
+    
+    <div class="ref">[1] T. Zhukabayeva et al., "Penetration Testing and ML-Driven Cybersecurity Framework," <i>IEEE Access</i>, vol. 13, 2025.</div>
+    
+    <div class="ref">[2] I. Almomani et al., "WSN-DS: A Dataset for IDS in Wireless Sensor Networks," <i>J. Sensors</i>, 2016.</div>
+    
+    <div class="ref">[3] E. C. P. Neto et al., "CICIoT2023: Real-Time Dataset for Large-Scale Attacks," <i>Sensors</i>, vol. 23, 2023.</div>
+    
+    <div class="ref">[4] M. A. Ferrag et al., "Edge-IIoTset: Comprehensive IoT/IIoT Dataset," <i>IEEE Access</i>, vol. 10, 2022.</div>
+    
+    <div class="ref">[5] P. Sinha et al., "Efficient data driven framework for WSN intrusion detection," <i>Sci. Reports</i>, vol. 15, 2025.</div>
+    
+    <div class="ref">[6] W. Khan et al., "Enhancing security in 6G-enabled WSN," <i>Frontiers Sust. Cities</i>, vol. 7, 2025.</div>
+    
+    <div class="ref">[7] Y. Terraf et al., "Jamming Detection Using Transfer Learning," <i>IEEE Open J. Commun. Soc.</i>, vol. 7, 2026.</div>
+    
+    <div class="ref">[8] K. Duan et al., "Hybrid ML/DL for network intrusion detection," <i>Int. J. ICT</i>, vol. 26, 2025.</div>
+    
+    <div class="ref">[9] P. Phalaagae et al., "Hybrid CNN-LSTM With Attention for IDS," <i>IEEE Access</i>, vol. 13, 2025.</div>
+    
+    <div class="ref">[10] Y. Ganin et al., "Domain-Adversarial Training of Neural Networks," <i>JMLR</i>, vol. 17, 2016.</div>
+    
+    <div class="ref">[11] M. A. Ferrag et al., "Deep Learning for Cyber Security IDS," <i>J. Info. Sec. Apps.</i>, vol. 50, 2020.</div>
+  </div>
+  
+  <div class="full-width page-number">3</div>
+</div>
+
+<div style="text-align: center; margin-top: 40px; padding: 20px; background: #fff; max-width: 8.5in; margin-left: auto; margin-right: auto;">
+  <h2>📄 IEEE LaTeX Paper Preview</h2>
+  <p><strong>Actual PDF will be generated by compiling the .tex file</strong></p>
+  <p>Total: ~6 pages in IEEE 2-column format</p>
+  <p><strong>File:</strong> C:\Users\Riteesh\Programming\w-sentry\paper\w-sentry-paper.tex</p>
+  <p><strong>To compile:</strong> Use Overleaf (upload .tex + figures) or install MiKTeX locally</p>
+</div>
+
+</body>
+</html>

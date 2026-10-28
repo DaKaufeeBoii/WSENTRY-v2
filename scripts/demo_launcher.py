@@ -1,123 +1,121 @@
 """
-W-SENTRY Pre-flight checks and orchestrator for the two-laptop live demo.
+Two-Laptop Demo Launcher & Pre-Flight Verification Script for W-SENTRY.
+Checks environment prerequisites and launches appropriate demo services.
 """
-import argparse
 import os
-import subprocess
 import sys
-import time
+import shutil
+import argparse
+import subprocess
+from pathlib import Path
 
-REPO_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
-if REPO_ROOT not in sys.path:
-    sys.path.insert(0, REPO_ROOT)
-
-
-def check_npcap() -> bool:
-    """Check if Npcap / WinPcap service or DLL exists on Windows."""
-    if os.name != "nt":
-        return True
-    system32 = os.path.join(os.environ.get("SystemRoot", "C:\\Windows"), "System32")
-    wpcap = os.path.join(system32, "wpcap.dll")
-    packet = os.path.join(system32, "packet.dll")
-    npcap_dir = os.path.join(system32, "Npcap")
-    found = os.path.exists(wpcap) or os.path.exists(packet) or os.path.exists(npcap_dir)
-    return found
+# Add project root to sys.path
+PROJECT_ROOT = Path(__file__).resolve().parent.parent
+if str(PROJECT_ROOT) not in sys.path:
+    sys.path.insert(0, str(PROJECT_ROOT))
 
 
-def check_models() -> bool:
-    """Check required model inference artifacts in models/saved/."""
-    required = ["scaler.pkl", "hybrid_model.pt", "temp_scaler.pt", "model_config.json"]
-    saved_dir = os.path.join(REPO_ROOT, "models", "saved")
-    for r in required:
-        if not os.path.exists(os.path.join(saved_dir, r)):
-            return False
-    return True
-
-
-def check_wsl() -> bool:
-    """Check if WSL is available."""
+def check_ping(ip: str) -> bool:
+    """Verifies ICMP reachability to peer IP."""
+    param = "-n" if sys.platform.startswith("win") else "-c"
     try:
-        res = subprocess.run(["wsl", "--status"], capture_output=True, text=True, check=False)
+        res = subprocess.run(["ping", param, "1", ip], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
         return res.returncode == 0
     except Exception:
         return False
 
 
-def ping_peer(ip: str) -> bool:
-    """Verify ICMP connectivity to peer IP."""
-    param = "-n" if os.name == "nt" else "-c"
+def run_detector_checks(peer_ip: str | None = None, nic: str | None = None):
+    print("=" * 60)
+    print(" W-SENTRY DETECTOR PRE-FLIGHT VERIFICATION")
+    print("=" * 60)
+
+    # 1. Model Artifacts
+    model_dir = PROJECT_ROOT / "models" / "saved"
+    required_artifacts = ["scaler.pkl", "hybrid_model.pt", "temp_scaler.pt", "model_config.json"]
+    all_artifacts = True
+    for art in required_artifacts:
+        art_path = model_dir / art
+        if art_path.exists():
+            print(f"  [PASS] Found artifact: {art}")
+        else:
+            print(f"  [FAIL] Missing artifact: {art}")
+            all_artifacts = False
+
+    if not all_artifacts:
+        print("\n  [!] Exporting artifacts now...")
+        from src.live.save_artifacts import export_model_artifacts
+        export_model_artifacts(str(model_dir))
+        print("  [+] Model artifacts successfully generated.")
+
+    # 2. Scapy & NIC Enumeration
     try:
-        res = subprocess.run(["ping", param, "1", ip], capture_output=True, text=True, check=False)
-        return res.returncode == 0
-    except Exception:
-        return False
+        import scapy.all as scapy_all
+        ifaces = scapy_all.get_if_list()
+        print(f"  [PASS] Scapy initialized. Available NICs: {len(ifaces)}")
+    except Exception as e:
+        print(f"  [WARN] Scapy capture warning: {e}. (Ensure Npcap is installed on Windows)")
 
-
-def run_detector(nic: str, peer_ip: str) -> None:
-    print("\n=======================================================")
-    print("  W-SENTRY DETECTOR PRE-FLIGHT VERIFICATION")
-    print("=======================================================")
-
-    npcap_ok = check_npcap()
-    print(f"  [1/4] Npcap / WinPcap packet driver: {'[PASS]' if npcap_ok else '[WARN - Scapy will use simulation/raw socket]'}")
-
-    models_ok = check_models()
-    if not models_ok:
-        print("  [2/4] Model artifacts missing in models/saved/! (hybrid_model.pt, scaler.pkl, etc.)")
-        print("        Please ensure real trained model checkpoints exist in models/saved/.")
-        sys.exit(1)
-    else:
-        print("  [2/4] Model artifacts (models/saved/): [PASS]")
-
-    from src.live.capture import LiveCapture
-    ifaces = LiveCapture.list_interfaces()
-    print(f"  [3/4] Available network interfaces: {len(ifaces)} detected")
-    for ifc in ifaces[:4]:
-        print(f"        - {ifc['name']} ({ifc['ip']})")
-
+    # 3. Peer IP reachability
     if peer_ip:
-        reachable = ping_peer(peer_ip)
-        print(f"  [4/4] Peer connectivity to {peer_ip}: {'[PASS]' if reachable else '[UNREACHABLE - check IP]'}")
+        if check_ping(peer_ip):
+            print(f"  [PASS] Attacker peer at {peer_ip} is REACHABLE.")
+        else:
+            print(f"  [WARN] Attacker peer at {peer_ip} not responding to ping. Check LAN/Subnet.")
+
+    print("\n[+] Starting Streamlit Security Operations Center (SOC)...")
+    app_path = PROJECT_ROOT / "src" / "dashboard" / "app.py"
+    cmd = [sys.executable, "-m", "streamlit", "run", str(app_path)]
+    subprocess.run(cmd)
+
+
+def run_attacker_checks(peer_ip: str):
+    print("=" * 60)
+    print(" W-SENTRY ATTACKER PRE-FLIGHT VERIFICATION")
+    print("=" * 60)
+
+    # 1. WSL Availability
+    wsl_bin = shutil.which("wsl")
+    if wsl_bin:
+        print("  [PASS] WSL subsystem detected.")
+        # Check hping3 inside WSL
+        res = subprocess.run(["wsl", "-e", "which", "hping3"], capture_output=True, text=True)
+        if res.returncode == 0:
+            print("  [PASS] hping3 attack binary installed in WSL.")
+        else:
+            print("  [WARN] hping3 missing in WSL. Run: wsl -e bash scripts/setup_wsl_attack.sh")
     else:
-        print("  [4/4] Peer IP not specified (skipping ping test)")
+        print("  [WARN] WSL not found. Will use pure-Python attack fallback.")
 
-    print("\n[W-SENTRY] Launching Streamlit Dashboard...")
-    subprocess.run([sys.executable, "-m", "streamlit", "run", "src/dashboard/app.py"], cwd=REPO_ROOT)
-
-
-def run_attacker(peer_ip: str) -> None:
-    print("\n=======================================================")
-    print("  W-SENTRY ATTACKER PRE-FLIGHT VERIFICATION")
-    print("=======================================================")
-
-    wsl_ok = check_wsl()
-    print(f"  [1/3] WSL Environment: {'[PASS]' if wsl_ok else '[FAIL - WSL not found]'}")
-
-    if peer_ip:
-        reachable = ping_peer(peer_ip)
-        print(f"  [2/3] Peer connectivity to detector ({peer_ip}): {'[PASS]' if reachable else '[FAIL - Detector not reachable]'}")
+    # 2. Peer IP reachability
+    if check_ping(peer_ip):
+        print(f"  [PASS] Target detector at {peer_ip} is REACHABLE.")
     else:
-        print("  [2/3] Peer IP: [SKIPPED]")
+        print(f"  [WARN] Target detector at {peer_ip} is NOT responding to ping.")
 
-    print("  [3/3] Ready to simulate attacks.")
-    print("\nExample attack commands:")
-    print(f"  python -m src.attack.runner syn-flood --target {peer_ip or '192.168.1.100'} --port 80 --duration 30")
-    print(f"  python -m src.attack.runner port-scan --target {peer_ip or '192.168.1.100'}")
-    print(f"  python -m src.attack.runner arp-spoof --target {peer_ip or '192.168.1.100'} --gateway 192.168.1.1")
+    print("\n[*] Ready to launch attacks. Example commands:")
+    print(f"  python -m src.attack.runner syn-flood --target {peer_ip} --duration 30")
+    print(f"  python -m src.attack.runner port-scan --target {peer_ip}")
+    print(f"  python -m src.attack.runner udp-flood --target {peer_ip} --duration 30")
 
 
-def main() -> None:
+def main():
     parser = argparse.ArgumentParser(description="W-SENTRY Two-Laptop Demo Launcher")
-    parser.add_argument("--role", choices=["detector", "attacker"], required=True, help="Host role in the demo")
-    parser.add_argument("--nic", default="Wi-Fi", help="Network interface for detector")
-    parser.add_argument("--peer-ip", default="", help="IP of the partner laptop")
+    parser.add_argument("--role", choices=["detector", "attacker"], required=True, help="Role of this machine")
+    parser.add_argument("--peer-ip", default=None, help="IP address of the other laptop")
+    parser.add_argument("--nic", default=None, help="Network adapter name (detector only)")
+
     args = parser.parse_args()
 
     if args.role == "detector":
-        run_detector(args.nic, args.peer_ip)
-    else:
-        run_attacker(args.peer_ip)
+        run_detector_checks(peer_ip=args.peer_ip, nic=args.nic)
+    elif args.role == "attacker":
+        if not args.peer_ip:
+            print("Error: --peer-ip is required for attacker role.")
+            sys.exit(1)
+        run_attacker_checks(peer_ip=args.peer_ip)
 
 
 if __name__ == "__main__":
     main()
+

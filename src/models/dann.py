@@ -9,6 +9,7 @@ import numpy as np
 from torch.utils.data import DataLoader, TensorDataset
 
 from src.models.hybrid_dl import HybridCNNBiLSTMAttention, SelfAttention
+from src.utils import set_seed
 
 
 class GradientReversal(torch.autograd.Function):
@@ -71,11 +72,13 @@ def _alpha_schedule(epoch, max_epochs):
 def train_dann(X_train, y_train, d_train, X_val, y_val, d_val,
                n_features=15, n_classes=5, n_domains=3,
                epochs=30, batch_size=256, lr=1e-3, lambda_domain=1.0,
-               pretrain_epochs=5, device="cpu"):
+               pretrain_epochs=5, device="cpu", seed=42):
     """
     Train DANN with pre-training phase.
     First trains threat classifier only, then enables gradient reversal.
     """
+    # Seed before constructing the model: weight init draws from the torch RNG.
+    set_seed(seed)
     model = DANN(n_features, n_classes, n_domains).to(device)
     optimizer = torch.optim.AdamW(model.parameters(), lr=lr, weight_decay=1e-4)
     scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, patience=3, factor=0.5)

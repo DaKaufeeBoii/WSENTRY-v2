@@ -1,3 +1,2 @@
-"""
-W-SENTRY Dashboard package.
-"""
+"""W-SENTRY Dashboard package."""
+

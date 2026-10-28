@@ -1,0 +1,59 @@
+{
+  "native_same_dataset": {
+    "WSN": {
+      "name": "Native_WSN",
+      "accuracy": 98.06,
+      "f1": 98.15
+    },
+    "CIC": {
+      "name": "Native_CIC",
+      "accuracy": 97.8,
+      "f1": 97.59
+    },
+    "Edge": {
+      "name": "Native_Edge",
+      "accuracy": 94.39,
+      "f1": 94.65
+    }
+  },
+  "behavioral_transfer_matrix": {
+    "WSN\u2192WSN": 97.79,
+    "WSN\u2192CIC": 0.3,
+    "WSN\u2192Edge": 80.7,
+    "CIC\u2192WSN": 0.99,
+    "CIC\u2192CIC": 97.79,
+    "CIC\u2192Edge": 15.4,
+    "Edge\u2192WSN": 26.96,
+    "Edge\u2192CIC": 61.77,
+    "Edge\u2192Edge": 97.42
+  },
+  "dann_2domain": {
+    "CIC": {
+      "name": "DANN2D_CIC",
+      "accuracy": 96.5,
+      "f1": 96.03
+    },
+    "Edge": {
+      "name": "DANN2D_Edge",
+      "accuracy": 96.29,
+      "f1": 96.32
+    }
+  },
+  "calibration": {
+    "WSN": {
+      "temperature": 1.04,
+      "ece_before": 1.7,
+      "ece_after": 1.86
+    },
+    "CIC": {
+      "temperature": 1.495,
+      "ece_before": 0.23,
+      "ece_after": 0.43
+    },
+    "Edge": {
+      "temperature": 1.077,
+      "ece_before": 1.78,
+      "ece_after": 2.04
+    }
+  }
+}

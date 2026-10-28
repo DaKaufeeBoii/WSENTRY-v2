@@ -7,6 +7,8 @@ import torch.nn.functional as F
 import numpy as np
 from torch.utils.data import DataLoader, TensorDataset
 
+from src.utils import set_seed
+
 
 class SelfAttention(nn.Module):
     """Scaled dot-product self-attention over temporal dimension."""
@@ -84,8 +86,10 @@ class HybridCNNBiLSTMAttention(nn.Module):
 
 
 def train_hybrid(X_train, y_train, X_val, y_val, n_features=15, n_classes=5,
-                 epochs=30, batch_size=256, lr=1e-3, device="cpu"):
+                 epochs=30, batch_size=256, lr=1e-3, device="cpu", seed=42):
     """Train the hybrid model with class-weighted loss. Returns (model, history)."""
+    # Seed before constructing the model: weight init draws from the torch RNG.
+    set_seed(seed)
     model = HybridCNNBiLSTMAttention(n_features, n_classes).to(device)
     optimizer = torch.optim.AdamW(model.parameters(), lr=lr, weight_decay=1e-4)
     scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, patience=3, factor=0.5)

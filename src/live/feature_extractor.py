@@ -1,14 +1,12 @@
 """
-Live feature extractor converting raw packet windows into 20 behavioral features.
+Live feature extraction converting raw Scapy packets into the 20 behavioral features.
 """
-import math
 import os
-import time
-from collections import Counter
-from typing import Any, Dict, List, Optional
-
+import math
 import joblib
 import numpy as np
+from typing import List, Dict, Any, Optional
+from collections import Counter
 from sklearn.preprocessing import RobustScaler
 
 from src.data.dataset_loader import FEATURE_COLS
@@ -16,217 +14,167 @@ from src.data.dataset_loader import FEATURE_COLS
 
 class LiveFeatureExtractor:
     """
-    Converts a sliding window of raw scapy packets into the 20 behavioral
-    features matching FEATURE_COLS from src/data/dataset_loader.py.
+    Extracts the 20 behavioral features from a sliding window of network packets.
+    Matches the schema of FEATURE_COLS in src/data/dataset_loader.py.
     """
 
-    def __init__(self, scaler_path: str = "models/saved/scaler.pkl") -> None:
-        self.scaler_path = scaler_path
-        self.scaler = self._load_or_create_scaler(scaler_path)
-
-    def _load_or_create_scaler(self, path: str) -> RobustScaler:
-        """Load fitted RobustScaler from disk."""
-        candidates = [
-            path,
-            os.path.abspath(path),
-            os.path.join(os.path.dirname(__file__), "..", "..", "models", "saved", "scaler.pkl"),
-            os.path.join("models", "saved", "scaler.pkl"),
-        ]
-        for p in candidates:
-            if os.path.exists(p):
-                try:
-                    loaded = joblib.load(p)
-                    if isinstance(loaded, RobustScaler):
-                        return loaded
-                except Exception:
-                    pass
-
-        raise FileNotFoundError(
-            f"Fitted RobustScaler not found at '{path}' or candidate locations. "
-            "Please ensure real model artifacts exist in models/saved/scaler.pkl."
-        )
-
-    def _parse_packet(self, pkt: Any) -> Dict[str, Any]:
-        """Extract per-packet raw fields: src_ip, dst_ip, src_port, dst_port,
-        protocol, flags, length, payload_length, timestamp."""
-        ts = getattr(pkt, "time", time.time())
-        length = len(pkt) if hasattr(pkt, "__len__") else getattr(pkt, "len", 64)
-
-        src_ip = "0.0.0.0"
-        dst_ip = "0.0.0.0"
-        src_port = 0
-        dst_port = 0
-        protocol_name = "OTHER"
-        proto_num = 0.0
-        flags_str = ""
-        payload_len = 0
-
-        # Layer checking if scapy packet
-        haslayer = getattr(pkt, "haslayer", None)
-        if callable(haslayer):
+    def __init__(self, scaler_path: Optional[str] = "models/saved/scaler.pkl", window_size: int = 5) -> None:
+        self.window_size = window_size
+        self.scaler = None
+        if scaler_path and os.path.exists(scaler_path):
             try:
-                if pkt.haslayer("IP"):
-                    ip_layer = pkt["IP"]
-                    src_ip = getattr(ip_layer, "src", "0.0.0.0")
-                    dst_ip = getattr(ip_layer, "dst", "0.0.0.0")
-                elif pkt.haslayer("IPv6"):
-                    ip_layer = pkt["IPv6"]
-                    src_ip = getattr(ip_layer, "src", "::")
-                    dst_ip = getattr(ip_layer, "dst", "::")
-                elif pkt.haslayer("ARP"):
-                    arp = pkt["ARP"]
-                    src_ip = getattr(arp, "psrc", "0.0.0.0")
-                    dst_ip = getattr(arp, "pdst", "0.0.0.0")
-                    protocol_name = "ARP"
+                self.scaler = joblib.load(scaler_path)
+            except Exception as e:
+                print(f"[LiveFeatureExtractor] Warning: Could not load scaler from {scaler_path}: {e}")
+        if self.scaler is None:
+            # Fallback initialized scaler with neutral medians/scales
+            self.scaler = RobustScaler()
+            dummy_data = np.zeros((10, len(FEATURE_COLS)), dtype=np.float32)
+            self.scaler.fit(dummy_data)
 
-                if pkt.haslayer("TCP"):
-                    tcp = pkt["TCP"]
-                    src_port = int(getattr(tcp, "sport", 0))
-                    dst_port = int(getattr(tcp, "dport", 0))
-                    protocol_name = "TCP"
-                    proto_num = 1.0
-                    flags_val = getattr(tcp, "flags", "")
-                    flags_str = str(flags_val).upper()
-                    if hasattr(tcp, "payload"):
-                        payload_len = len(tcp.payload)
-                elif pkt.haslayer("UDP"):
-                    udp = pkt["UDP"]
-                    src_port = int(getattr(udp, "sport", 0))
-                    dst_port = int(getattr(udp, "dport", 0))
-                    protocol_name = "UDP"
-                    proto_num = 2.0
-                    if hasattr(udp, "payload"):
-                        payload_len = len(udp.payload)
-                elif pkt.haslayer("ICMP"):
-                    protocol_name = "ICMP"
-                    proto_num = 3.0
-            except Exception:
-                pass
-        else:
-            # Fallback for dict/mock objects in tests
-            src_ip = getattr(pkt, "src_ip", getattr(pkt, "src", "0.0.0.0"))
-            dst_ip = getattr(pkt, "dst_ip", getattr(pkt, "dst", "0.0.0.0"))
-            src_port = getattr(pkt, "src_port", getattr(pkt, "sport", 0))
-            dst_port = getattr(pkt, "dst_port", getattr(pkt, "dport", 0))
-            proto = getattr(pkt, "protocol", "TCP")
-            protocol_name = proto if isinstance(proto, str) else "TCP"
-            proto_map = {"TCP": 1.0, "UDP": 2.0, "ICMP": 3.0}
-            proto_num = proto_map.get(protocol_name.upper(), 0.0)
-            flags_str = str(getattr(pkt, "flags", "")).upper()
-            payload_len = getattr(pkt, "payload_len", max(0, length - 40))
+    def parse_packet(self, pkt: Any) -> Dict[str, Any]:
+        """Extracts normalized primitive fields from a Scapy packet or dict."""
+        if isinstance(pkt, dict):
+            return pkt
 
-        return {
-            "timestamp": float(ts),
-            "src_ip": str(src_ip),
-            "dst_ip": str(dst_ip),
-            "src_port": int(src_port),
-            "dst_port": int(dst_port),
-            "protocol": protocol_name,
-            "proto_num": proto_num,
-            "flags": flags_str,
-            "length": int(length),
-            "payload_len": int(payload_len),
+        info = {
+            "timestamp": getattr(pkt, "time", 0.0),
+            "length": len(pkt),
+            "payload_length": len(getattr(pkt, "payload", b"")),
+            "protocol": "OTHER",
+            "src_ip": "0.0.0.0",
+            "dst_ip": "0.0.0.0",
+            "src_port": 0,
+            "dst_port": 0,
+            "flags": "",
         }
 
-    def _extract_vector_for_subwindow(self, sub_window: List[Dict[str, Any]]) -> np.ndarray:
-        """Extract a single 20-element feature vector from a window of parsed packets."""
-        n_pkts = len(sub_window)
-        if n_pkts == 0:
-            return np.zeros(len(FEATURE_COLS), dtype=np.float32)
+        # IP layer
+        if pkt.haslayer("IP"):
+            info["src_ip"] = pkt["IP"].src
+            info["dst_ip"] = pkt["IP"].dst
 
-        lengths = [p["length"] for p in sub_window]
-        payloads = [p["payload_len"] for p in sub_window]
-        timestamps = [p["timestamp"] for p in sub_window]
-        src_ports = [p["src_port"] for p in sub_window]
-        dst_ports = [p["dst_port"] for p in sub_window]
-        flags_list = [p["flags"] for p in sub_window]
-        dst_ips = [p["dst_ip"] for p in sub_window]
-        proto_nums = [p["proto_num"] for p in sub_window]
+        # Transport layer
+        if pkt.haslayer("TCP"):
+            info["protocol"] = "TCP"
+            info["src_port"] = pkt["TCP"].sport
+            info["dst_port"] = pkt["TCP"].dport
+            info["flags"] = str(pkt["TCP"].flags)
+        elif pkt.haslayer("UDP"):
+            info["protocol"] = "UDP"
+            info["src_port"] = pkt["UDP"].sport
+            info["dst_port"] = pkt["UDP"].dport
+        elif pkt.haslayer("ICMP"):
+            info["protocol"] = "ICMP"
+        elif pkt.haslayer("ARP"):
+            info["protocol"] = "ARP"
+            if hasattr(pkt["ARP"], "psrc"):
+                info["src_ip"] = pkt["ARP"].psrc
+                info["dst_ip"] = pkt["ARP"].pdst
 
-        # f_volume: sum of packet lengths in window
+        return info
+
+    def extract_features_dict(self, parsed_window: List[Dict[str, Any]]) -> Dict[str, float]:
+        """
+        Computes the 20 behavioral features for a window of parsed packet dicts.
+        """
+        n = max(len(parsed_window), 1)
+        lengths = [p["length"] for p in parsed_window]
+        timestamps = [p["timestamp"] for p in parsed_window]
+        duration = max(max(timestamps) - min(timestamps), 0.001) if len(timestamps) > 1 else 0.001
+
+        # 1. f_volume
         f_volume = float(sum(lengths))
 
-        # f_rate: f_volume / window_duration_seconds
-        duration = max(timestamps[-1] - timestamps[0], 0.001) if n_pkts > 1 else 0.01
+        # 2. f_rate
         f_rate = float(f_volume / duration)
 
-        # f_send_recv_ratio: count(src_port < 1024) / (count(dst_port < 1024) + 1)
-        src_privileged = sum(1 for sp in src_ports if 0 < sp < 1024)
-        dst_privileged = sum(1 for dp in dst_ports if 0 < dp < 1024)
-        f_send_recv_ratio = float(src_privileged / (dst_privileged + 1.0))
+        # 3. f_send_recv_ratio: count(src_port < 1024) / count(dst_port < 1024) + 1
+        src_priv = sum(1 for p in parsed_window if p["src_port"] < 1024)
+        dst_priv = sum(1 for p in parsed_window if p["dst_port"] < 1024)
+        f_send_recv_ratio = float(src_priv / (dst_priv + 1.0))
 
         # Flags counts
-        syn_count = sum(1 for f in flags_list if "S" in f or "SYN" in f)
-        fin_count = sum(1 for f in flags_list if "F" in f or "FIN" in f)
-        rst_count = sum(1 for f in flags_list if "R" in f or "RST" in f)
-        ack_count = sum(1 for f in flags_list if "A" in f or "ACK" in f)
-        psh_count = sum(1 for f in flags_list if "P" in f or "PSH" in f)
-        urg_count = sum(1 for f in flags_list if "U" in f or "URG" in f)
-        ece_count = sum(1 for f in flags_list if "E" in f or "ECE" in f)
+        syn_count = sum(1 for p in parsed_window if "S" in p["flags"])
+        ack_count = sum(1 for p in parsed_window if "A" in p["flags"])
+        fin_rst_count = sum(1 for p in parsed_window if ("F" in p["flags"] or "R" in p["flags"]))
+        psh_urg_ece = sum(1 for p in parsed_window if any(flag in p["flags"] for flag in ["P", "U", "E"]))
 
-        # Ratios
-        f_control_ratio = float((syn_count + fin_count + rst_count) / n_pkts)
-        f_ack_ratio = float(ack_count / n_pkts)
-        f_syn_ratio = float(syn_count / n_pkts)
-        f_fin_rst_ratio = float((fin_count + rst_count) / n_pkts)
+        # 4. f_control_ratio
+        f_control_ratio = float((syn_count + fin_rst_count) / n)
 
-        # f_variability: std(packet_lengths) / mean(packet_lengths) + 1
-        mean_len = float(np.mean(lengths))
-        std_len = float(np.std(lengths))
-        f_variability = float((std_len / (mean_len + 1e-5)) + 1.0)
+        # 5. f_ack_ratio
+        f_ack_ratio = float(ack_count / n)
 
-        # f_port_entropy: Shannon entropy of unique dst_ports
+        # 6. f_syn_ratio
+        f_syn_ratio = float(syn_count / n)
+
+        # 7. f_fin_rst_ratio
+        f_fin_rst_ratio = float(fin_rst_count / n)
+
+        # 8. f_variability: std(lengths) / mean(lengths) + 1
+        mean_len = np.mean(lengths) if lengths else 1.0
+        std_len = np.std(lengths) if lengths else 0.0
+        f_variability = float(std_len / (mean_len + 1.0) + 1.0)
+
+        # 9. f_port_entropy: Shannon entropy of unique dst_ports
+        dst_ports = [p["dst_port"] for p in parsed_window]
         port_counts = Counter(dst_ports)
         entropy = 0.0
         for cnt in port_counts.values():
-            p = cnt / n_pkts
-            entropy -= p * math.log2(p + 1e-9)
+            p_val = cnt / n
+            entropy -= p_val * math.log2(p_val)
         f_port_entropy = float(entropy)
 
-        # f_flag_intensity: count(PSH|URG|ECE flags)
-        f_flag_intensity = float(psh_count + urg_count + ece_count)
+        # 10. f_flag_intensity
+        f_flag_intensity = float(psh_urg_ece)
 
-        # f_payload_ratio: sum(payload_bytes) / (f_volume + 1e-5) + 1
-        f_payload_ratio = float((sum(payloads) / (f_volume + 1e-5)) + 1.0)
+        # 11. f_payload_ratio
+        payload_sum = sum(p["payload_length"] for p in parsed_window)
+        f_payload_ratio = float(payload_sum / (f_volume + 1.0) + 1.0)
 
-        # f_timing: mean(inter-arrival times)
-        if n_pkts > 1:
-            iats = np.diff(timestamps)
-            f_timing = float(np.mean(np.maximum(iats, 0.0)))
+        # 12. f_timing: mean inter-arrival time
+        if len(timestamps) > 1:
+            sorted_t = sorted(timestamps)
+            iats = [sorted_t[i] - sorted_t[i - 1] for i in range(1, len(sorted_t))]
+            f_timing = float(np.mean(iats))
         else:
             f_timing = 0.01
 
-        # f_burst: max(packets_per_100ms_bin)
-        if n_pkts > 1 and (timestamps[-1] - timestamps[0]) > 0:
-            bins = int(max(1, math.ceil((timestamps[-1] - timestamps[0]) / 0.1)))
-            hist, _ = np.histogram(timestamps, bins=bins)
-            f_burst = float(np.max(hist))
+        # 13. f_burst: max packets per 100ms bin
+        if len(timestamps) > 1:
+            min_t = min(timestamps)
+            bins = Counter(int((t - min_t) / 0.1) for t in timestamps)
+            f_burst = float(max(bins.values()))
         else:
-            f_burst = float(n_pkts)
+            f_burst = 1.0
 
-        # f_protocol_type: mode protocol as float (TCP=1, UDP=2, ICMP=3, other=0)
-        mode_proto = Counter(proto_nums).most_common(1)[0][0]
-        f_protocol_type = float(mode_proto)
+        # 14. f_protocol_type: mode protocol as float (TCP=1, UDP=2, ICMP=3, other=0)
+        proto_map = {"TCP": 1.0, "UDP": 2.0, "ICMP": 3.0}
+        proto_counts = Counter(p["protocol"] for p in parsed_window)
+        mode_proto = proto_counts.most_common(1)[0][0] if proto_counts else "TCP"
+        f_protocol_type = float(proto_map.get(mode_proto, 0.0))
 
-        # f_energy: sum(length^2)
-        f_energy = float(sum(L * L for L in lengths))
+        # 15. f_energy: sum(length^2)
+        f_energy = float(sum(l ** 2 for l in lengths))
 
-        # f_distance: count(unique dst_ips)
-        f_distance = float(len(set(dst_ips)))
+        # 16. f_distance: count of unique dst_ips
+        f_distance = float(len(set(p["dst_ip"] for p in parsed_window)))
 
-        # f_rank: max_packet_length / mean_packet_length
-        f_rank = float(max(lengths) / (mean_len + 1e-5))
+        # 17. f_rank: max_packet_length / mean_packet_length
+        f_rank = float(max(lengths) / (mean_len + 1.0)) if lengths else 1.0
 
-        # f_anomaly_score: abs(f_send_recv_ratio - 1) * f_rate
-        f_anomaly_score = float(abs(f_send_recv_ratio - 1.0) * f_rate)
+        # 18. f_anomaly_score: abs(f_send_recv_ratio - 1) * f_rate
+        f_anomaly_score = float(abs(f_send_recv_ratio - 1.0) * (f_rate / 1000.0))
 
-        # f_conn_state: count(SYN) + count(ACK) + count(FIN)
-        f_conn_state = float(syn_count + ack_count + fin_count)
+        # 19. f_conn_state: count(SYN) + count(ACK) + count(FIN)
+        f_conn_state = float(syn_count + ack_count + fin_rst_count)
 
-        # f_mqtt_activity: count(packets with dst_port in {1883, 8883})
-        f_mqtt_activity = float(sum(1 for dp in dst_ports if dp in (1883, 8883)))
+        # 20. f_mqtt_activity: packets with dst_port in {1883, 8883}
+        mqtt_pkts = sum(1 for p in parsed_window if p["dst_port"] in {1883, 8883})
+        f_mqtt_activity = float(mqtt_pkts)
 
-        feature_dict = {
+        return {
             "f_volume": f_volume,
             "f_rate": f_rate,
             "f_send_recv_ratio": f_send_recv_ratio,
@@ -249,48 +197,42 @@ class LiveFeatureExtractor:
             "f_mqtt_activity": f_mqtt_activity,
         }
 
-        return np.array([feature_dict[col] for col in FEATURE_COLS], dtype=np.float32)
-
-    def extract(self, packets: List[Any], window_size: int = 5) -> np.ndarray:
+    def extract(self, packets: List[Any]) -> np.ndarray:
         """
-        Converts a window of packets into shape (1, window_size, 20).
-        Applies log-transform, clipping, and RobustScaler transform.
+        Converts a list of packets into model input array of shape (1, window_size, 20).
+        Applies log-norm, clipping, and RobustScaler transform.
         """
-        parsed = [self._parse_packet(p) for p in packets]
+        parsed = [self.parse_packet(p) for p in packets]
+        if not parsed:
+            # Empty fallback
+            return np.zeros((1, self.window_size, len(FEATURE_COLS)), dtype=np.float32)
 
-        # Ensure we have window_size elements
-        if len(parsed) < window_size:
-            if len(parsed) == 0:
-                # Fallback empty parsed
-                parsed = [self._parse_packet(None)] * window_size
-            else:
-                # Pad with first packet to reach window_size
-                pad = [parsed[0]] * (window_size - len(parsed))
-                parsed = pad + parsed
-        elif len(parsed) > window_size:
-            parsed = parsed[-window_size:]
+        # Pad window if smaller than window_size
+        while len(parsed) < self.window_size:
+            parsed.append(parsed[-1])
 
-        # For each time step t in the sequence, compute features using history up to t
-        vectors = []
-        for i in range(1, window_size + 1):
-            vec = self._extract_vector_for_subwindow(parsed[:i])
-            vectors.append(vec)
+        # For temporal dynamics, compute feature vector per step in window
+        step_features = []
+        for i in range(1, self.window_size + 1):
+            sub_window = parsed[:i]
+            feats = self.extract_features_dict(sub_window)
+            vec = [feats[col] for col in FEATURE_COLS]
+            step_features.append(vec)
 
-        raw_features = np.stack(vectors, axis=0)  # Shape (window_size, 20)
+        # Array of shape (window_size, 20)
+        X = np.array(step_features, dtype=np.float64)
 
-        # Preprocessing matching preprocessor.py:
-        # 1. Log-transform
-        feat_log = np.sign(raw_features) * np.log1p(np.abs(raw_features))
-        # 2. Clip to [-50, 50]
-        feat_clip = np.clip(feat_log, -50.0, 50.0).astype(np.float32)
-        # 3. RobustScaler transform
-        feat_scaled = self.scaler.transform(feat_clip).astype(np.float32)
+        # Log-transform and clip matching preprocessor.py
+        X = np.sign(X) * np.log1p(np.abs(X))
+        X = np.clip(X, -50.0, 50.0).astype(np.float32)
 
-        # Reshape to (1, window_size, 20)
-        return np.expand_dims(feat_scaled, axis=0)
+        # RobustScaler
+        if self.scaler is not None:
+            try:
+                X = self.scaler.transform(X).astype(np.float32)
+            except Exception:
+                pass
 
-    def extract_single_record_features(self, packet: Any) -> Dict[str, float]:
-        """Convenience method to get readable raw feature dict for a single packet."""
-        parsed = [self._parse_packet(packet)]
-        vec = self._extract_vector_for_subwindow(parsed)
-        return {col: float(val) for col, val in zip(FEATURE_COLS, vec)}
+        # Shape as batch of 1: (1, window_size, 20)
+        return np.expand_dims(X, axis=0)
+

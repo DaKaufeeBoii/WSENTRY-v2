@@ -1,137 +1,152 @@
 """
-W-SENTRY Streamlit Application Entry Point.
-Comprehensive 6-Tab Interactive Dashboard for Wireless Intrusion Detection.
+W-SENTRY SOC Dashboard: Streamlit main entry point.
+Visualizes Phase 1/2 results and runs real-time network capture, classification, and mitigation.
 """
-import json
 import os
 import sys
+import json
+from pathlib import Path
 
-# Ensure repository root is on sys.path
-REPO_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
-if REPO_ROOT not in sys.path:
-    sys.path.insert(0, REPO_ROOT)
+# Add project root to path
+PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent
+if str(PROJECT_ROOT) not in sys.path:
+    sys.path.insert(0, str(PROJECT_ROOT))
 
 import streamlit as st
 
+try:
+    from streamlit_autorefresh import st_autorefresh
+    HAS_AUTOREFRESH = True
+except ImportError:
+    HAS_AUTOREFRESH = False
+
+from src.dashboard.tabs import (
+    tab_performance,
+    tab_live_monitor,
+    tab_transfer_matrix,
+    tab_roc_auc,
+    tab_per_class,
+    tab_profiler,
+)
 from src.live.buffer import PacketBuffer
 from src.live.inference import InferenceEngine
-from src.live.mitigation import MitigationEngine, MitigationMode
-from src.dashboard.tabs.tab_performance import render as render_tab_performance
-from src.dashboard.tabs.tab_live_monitor import render as render_tab_live_monitor
-from src.dashboard.tabs.tab_transfer_matrix import render as render_tab_transfer_matrix
-from src.dashboard.tabs.tab_roc_auc import render as render_tab_roc_auc
-from src.dashboard.tabs.tab_per_class import render as render_tab_per_class
-from src.dashboard.tabs.tab_profiler import render as render_tab_profiler
+from src.live.mitigation import MitigationEngine
+from src.live.inference_thread import InferenceThread
 
 
 @st.cache_data
-def load_results_data():
-    """Load Phase 1 and Phase 2 JSON benchmark results."""
-    def load_json(candidates):
-        for path in candidates:
-            if os.path.exists(path):
-                try:
-                    with open(path, "r", encoding="utf-8") as f:
-                        return json.load(f)
-                except Exception:
-                    pass
-        return {}
+def load_results():
+    """Load Phase 1 and Phase 2 JSON results."""
+    p1_path = os.path.join(PROJECT_ROOT, "data", "processed", "phase1_results.json")
+    p2_path = os.path.join(PROJECT_ROOT, "data", "processed", "phase2_results.json")
 
-    phase1 = load_json([
-        os.path.join(REPO_ROOT, "results", "phase1_results.json"),
-        os.path.join(REPO_ROOT, "data", "processed", "phase1_results.json"),
-    ])
-    phase2 = load_json([
-        os.path.join(REPO_ROOT, "results", "phase2_results.json"),
-        os.path.join(REPO_ROOT, "data", "processed", "phase2_results.json"),
-    ])
+    phase1, phase2 = {}, {}
+    if os.path.exists(p1_path):
+        with open(p1_path, "r") as f:
+            phase1 = json.load(f)
+    if os.path.exists(p2_path):
+        with open(p2_path, "r") as f:
+            phase2 = json.load(f)
+
     return phase1, phase2
 
 
-def main() -> None:
-    st.set_page_config(
-        page_title="W-SENTRY Intrusion Detection",
-        page_icon="🛡️",
-        layout="wide",
-        initial_sidebar_state="expanded",
-    )
-
-    # Initialize session state singleton instances
+def init_session_state():
+    """Initialize persistent background engines and buffers."""
     if "buffer" not in st.session_state:
         st.session_state.buffer = PacketBuffer(maxlen=10000)
+
     if "engine" not in st.session_state:
-        st.session_state.engine = InferenceEngine(model_dir=os.path.join(REPO_ROOT, "models", "saved"))
+        model_dir = os.path.join(PROJECT_ROOT, "models", "saved")
+        st.session_state.engine = InferenceEngine(model_dir=model_dir)
+
     if "mitigation" not in st.session_state:
-        st.session_state.mitigation = MitigationEngine(mode=MitigationMode.SIMULATED)
+        st.session_state.mitigation = MitigationEngine()
 
-    phase1, phase2 = load_results_data()
+    if "capture" not in st.session_state:
+        st.session_state.capture = None
 
-    # Sidebar Header and System Telemetry
-    with st.sidebar:
-        st.title("🛡️ W-SENTRY")
-        st.markdown("**Domain-Adversarial Neural NIDS**")
-        st.caption("v1.0.0 · Production Stage 3")
-        st.markdown("---")
+    if "is_capturing" not in st.session_state:
+        st.session_state.is_capturing = False
 
-        st.markdown("### System Telemetry")
-        st.markdown(f"- **Engine**: Hybrid CNN-BiLSTM-Attn")
-        st.markdown(f"- **Input Shape**: `(batch, 5, 20)`")
-        st.markdown(f"- **Calibration**: Temperature Scaled")
-        st.markdown(f"- **Defense Mode**: `{st.session_state.mitigation.mode.value.upper()}`")
-        st.markdown(f"- **Buffer Capacity**: `10,000` pkts")
-
-        st.markdown("---")
-        st.markdown("### Benchmarks")
-        st.markdown("- **WSN-DS**: 98.1% Acc")
-        st.markdown("- **CIC-IoT-2023**: 97.8% Acc")
-        st.markdown("- **Edge-IIoTset**: 94.4% Acc")
-        st.markdown("- **DANN Cross**: 96.5% Acc")
-
-        st.markdown("---")
-        st.caption("KG Reddy College of Engineering & Technology\nMajor Project 2026-27")
-
-    # Main App Header
-    st.title("W-SENTRY: Cross-Domain Wireless Intrusion Detection System")
-    st.markdown(
-        "AI-Powered Real-Time Intrusion Detection with Protocol-Agnostic Behavioral Engineering "
-        "and Domain Adversarial Neural Networks."
-    )
-
-    # 6-Tab Layout
-    tab1, tab2, tab3, tab4, tab5, tab6 = st.tabs([
-        "📊 Performance Overview",
-        "📡 Live Monitor",
-        "🔀 Transfer Matrix",
-        "📈 ROC / AUC",
-        "🎯 Per-Class Metrics",
-        "🛡️ Connection Profiler",
-    ])
-
-    with tab1:
-        render_tab_performance(phase1, phase2)
-
-    with tab2:
-        render_tab_live_monitor(
+    if "inference_thread" not in st.session_state or not st.session_state.inference_thread.is_alive():
+        inf_thread = InferenceThread(
             buffer=st.session_state.buffer,
             engine=st.session_state.engine,
             mitigation=st.session_state.mitigation,
+            poll_interval=0.1,
+        )
+        inf_thread.start()
+        st.session_state.inference_thread = inf_thread
+
+
+def main():
+    st.set_page_config(
+        page_title="W-SENTRY SOC Dashboard",
+        page_icon="🛡️",
+        layout="wide",
+        initial_sidebar_state="collapsed",
+    )
+
+    init_session_state()
+    phase1, phase2 = load_results()
+
+    # Title Banner
+    col_t1, col_t2 = st.columns([4, 1])
+    with col_t1:
+        st.title("🛡️ W-SENTRY Security Operations Center")
+        st.caption(
+            "Cross-Domain Wireless Network Intrusion Detection & Autonomous Prevention System | "
+            "Hybrid CNN-BiLSTM-Attention with DANN Adaptation"
+        )
+    with col_t2:
+        st.markdown(
+            "<div style='text-align: right; padding-top: 15px;'>"
+            "<span style='color: #00d4ff; font-weight: bold;'>SYSTEM ONLINE</span><br>"
+            "<small style='color: #94a3b8;'>v3.0.0 Live</small></div>",
+            unsafe_allow_html=True
         )
 
-    with tab3:
-        render_tab_transfer_matrix(phase1, phase2)
+    # Auto-refresh when live capture is running
+    if st.session_state.get("is_capturing", False) and HAS_AUTOREFRESH:
+        st_autorefresh(interval=2000, key="live_refresh")
 
-    with tab4:
-        render_tab_roc_auc()
+    # 6-Tab Layout
+    tabs = st.tabs([
+        "📊 Performance Overview",
+        "📡 Live Monitor",
+        "🔄 Transfer Matrix",
+        "📈 ROC / AUC Curves",
+        "🎯 Per-Class Metrics",
+        "🔒 Connection Profiler & Mitigation",
+    ])
 
-    with tab5:
-        render_tab_per_class(phase1, phase2)
+    with tabs[0]:
+        tab_performance.render(phase1, phase2)
 
-    with tab6:
-        render_tab_profiler(
-            buffer=st.session_state.buffer,
-            mitigation=st.session_state.mitigation,
+    with tabs[1]:
+        tab_live_monitor.render(
+            st.session_state.buffer,
+            st.session_state.engine,
+            st.session_state.capture,
+        )
+
+    with tabs[2]:
+        tab_transfer_matrix.render(phase1, phase2)
+
+    with tabs[3]:
+        tab_roc_auc.render()
+
+    with tabs[4]:
+        tab_per_class.render(phase1, phase2)
+
+    with tabs[5]:
+        tab_profiler.render(
+            st.session_state.buffer,
+            st.session_state.mitigation,
         )
 
 
 if __name__ == "__main__":
     main()
+

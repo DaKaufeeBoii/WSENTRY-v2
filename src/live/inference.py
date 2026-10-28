@@ -1,10 +1,9 @@
 """
-Live inference engine with temperature scaling and calibrated softmax.
+Model inference pipeline for real-time classification using Hybrid CNN-BiLSTM-Attention.
 """
-import json
 import os
-from typing import List, Tuple, Dict, Any, Optional
-
+import json
+from typing import Tuple, List, Optional
 import numpy as np
 import torch
 import torch.nn.functional as F
@@ -12,7 +11,8 @@ import torch.nn.functional as F
 from src.models.hybrid_dl import HybridCNNBiLSTMAttention
 from src.models.calibration import TemperatureScaler
 
-THREAT_LABELS: Dict[int, str] = {
+
+THREAT_LABELS = {
     0: "Normal",
     1: "Jamming",
     2: "Spoofing",
@@ -23,130 +23,98 @@ THREAT_LABELS: Dict[int, str] = {
 
 class InferenceEngine:
     """
-    Loads trained Hybrid CNN-BiLSTM-Attention model + temperature scaler.
-    Provides fast, calibrated single-window and batched inference on CPU or GPU.
+    Loads Hybrid CNN-BiLSTM-Attention model checkpoint and TemperatureScaler,
+    providing low-latency CPU batched inference.
     """
 
     def __init__(self, model_dir: str = "models/saved/", device: str = "cpu") -> None:
+        self.device = torch.device(device)
         self.model_dir = model_dir
-        self.device = torch.device(device if (device == "cpu" or torch.cuda.is_available()) else "cpu")
+        self.config_path = os.path.join(model_dir, "model_config.json")
+        self.model_path = os.path.join(model_dir, "hybrid_model.pt")
+        self.scaler_path = os.path.join(model_dir, "temp_scaler.pt")
 
         # Load config or default
-        config_path = os.path.join(model_dir, "model_config.json")
-        model_path = os.path.join(model_dir, "hybrid_model.pt")
-        temp_path = os.path.join(model_dir, "temp_scaler.pt")
-
         n_features = 20
         n_classes = 5
         hidden_dim = 128
-
-        if os.path.exists(config_path):
+        if os.path.exists(self.config_path):
             try:
-                with open(config_path, "r") as f:
+                with open(self.config_path, "r") as f:
                     cfg = json.load(f)
-                    n_features = cfg.get("n_features", 20)
-                    n_classes = cfg.get("n_classes", 5)
-                    hidden_dim = cfg.get("hidden_dim", 128)
-            except Exception:
-                pass
+                    n_features = cfg.get("n_features", n_features)
+                    n_classes = cfg.get("n_classes", n_classes)
+                    hidden_dim = cfg.get("hidden_dim", hidden_dim)
+            except Exception as e:
+                print(f"[InferenceEngine] Error loading config: {e}")
 
-        self.n_features = n_features
-        self.n_classes = n_classes
-        self.hidden_dim = hidden_dim
-
-        # Initialize network
+        # Instantiate model
         self.model = HybridCNNBiLSTMAttention(
             n_features=n_features,
             n_classes=n_classes,
             hidden_dim=hidden_dim,
+            dropout=0.0
         ).to(self.device)
 
-        # Initialize temperature scaler
-        self.temp_scaler = TemperatureScaler().to(self.device)
-
-        # Load weights if available
-        if os.path.exists(model_path):
+        if os.path.exists(self.model_path):
             try:
-                state_dict = torch.load(model_path, map_location=self.device, weights_only=True)
+                state_dict = torch.load(self.model_path, map_location=self.device)
                 self.model.load_state_dict(state_dict)
-            except Exception:
-                pass
-
-        if os.path.exists(temp_path):
-            try:
-                temp_state = torch.load(temp_path, map_location=self.device, weights_only=True)
-                self.temp_scaler.load_state_dict(temp_state)
-            except Exception:
-                pass
+                print(f"[InferenceEngine] Loaded model checkpoint from {self.model_path}")
+            except Exception as e:
+                print(f"[InferenceEngine] Warning: Could not load state_dict ({e})")
 
         self.model.eval()
+
+        # Instantiate temperature scaler
+        self.temp_scaler = TemperatureScaler().to(self.device)
+        if os.path.exists(self.scaler_path):
+            try:
+                scaler_dict = torch.load(self.scaler_path, map_location=self.device)
+                self.temp_scaler.load_state_dict(scaler_dict)
+            except Exception as e:
+                print(f"[InferenceEngine] Warning: Could not load temp_scaler ({e})")
         self.temp_scaler.eval()
+
+    @torch.no_grad()
+    def get_probabilities(self, features: np.ndarray) -> np.ndarray:
+        """
+        Computes calibrated softmax probabilities for input tensor.
+        Input shape: (batch_size, time_steps, n_features)
+        Returns: (batch_size, n_classes) float numpy array.
+        """
+        if isinstance(features, list):
+            features = np.array(features)
+        if features.ndim == 2:
+            features = np.expand_dims(features, axis=0)
+
+        x_tensor = torch.tensor(features, dtype=torch.float32, device=self.device)
+        logits = self.model(x_tensor)
+        calibrated_logits = self.temp_scaler(logits)
+        probs = F.softmax(calibrated_logits, dim=-1)
+        return probs.cpu().numpy()
 
     def predict(self, features: np.ndarray) -> Tuple[int, float, str]:
         """
-        Run inference on a single sequence window.
-        Args:
-            features: np.ndarray of shape (1, time_steps, n_features) or (time_steps, n_features).
-        Returns:
-            (predicted_class, confidence, label)
+        Predicts single sample/window.
+        Returns: (predicted_class, confidence, threat_label)
         """
-        if features.ndim == 2:
-            features = np.expand_dims(features, axis=0)
-
         probs = self.get_probabilities(features)
-        pred_cls = int(np.argmax(probs[0]))
-        confidence = float(probs[0][pred_cls])
-        label = THREAT_LABELS.get(pred_cls, "Unknown")
-        return pred_cls, confidence, label
+        pred_class = int(np.argmax(probs[0]))
+        confidence = float(probs[0][pred_class])
+        label = THREAT_LABELS.get(pred_class, f"Class_{pred_class}")
+        return pred_class, confidence, label
 
     def predict_batch(self, features: np.ndarray) -> List[Tuple[int, float, str]]:
         """
-        Batch inference for multiple windows.
-        Args:
-            features: np.ndarray of shape (batch, time_steps, n_features).
-        Returns:
-            List of (predicted_class, confidence, label)
+        Predicts batch of windows.
+        Returns: list of (predicted_class, confidence, threat_label)
         """
-        if len(features) == 0:
-            return []
-        if features.ndim == 2:
-            features = np.expand_dims(features, axis=0)
-
         probs = self.get_probabilities(features)
         results = []
-        for p in probs:
-            pred_cls = int(np.argmax(p))
-            confidence = float(p[pred_cls])
-            label = THREAT_LABELS.get(pred_cls, "Unknown")
-            results.append((pred_cls, confidence, label))
+        for p_row in probs:
+            pred_class = int(np.argmax(p_row))
+            conf = float(p_row[pred_class])
+            results.append((pred_class, conf, THREAT_LABELS.get(pred_class, f"Class_{pred_class}")))
         return results
 
-    def get_probabilities(self, features: np.ndarray) -> np.ndarray:
-        """
-        Compute full calibrated probability distribution.
-        Args:
-            features: np.ndarray of shape (batch, time_steps, n_features).
-        Returns:
-            np.ndarray of shape (batch, n_classes).
-        """
-        if features.ndim == 2:
-            features = np.expand_dims(features, axis=0)
-
-        with torch.no_grad():
-            tensor_x = torch.tensor(features, dtype=torch.float32, device=self.device)
-            # Ensure feature dimension matches model expectation
-            if tensor_x.shape[-1] != self.n_features:
-                if tensor_x.shape[-1] < self.n_features:
-                    pad = torch.zeros(
-                        (tensor_x.shape[0], tensor_x.shape[1], self.n_features - tensor_x.shape[-1]),
-                        dtype=torch.float32,
-                        device=self.device,
-                    )
-                    tensor_x = torch.cat([tensor_x, pad], dim=-1)
-                else:
-                    tensor_x = tensor_x[:, :, :self.n_features]
-
-            logits = self.model(tensor_x)
-            scaled_logits = self.temp_scaler(logits)
-            probs = F.softmax(scaled_logits, dim=-1).cpu().numpy()
-            return probs

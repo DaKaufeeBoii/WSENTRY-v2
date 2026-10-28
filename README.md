@@ -119,14 +119,23 @@ python run_phase2.py
 #   - Temperature scaling calibration
 ```
 
-### Phase 3: Dashboard + Live Demo (TODO)
+### Phase 3: Dashboard + Live Demo
 
-See `docs/PHASE3_PLAN.md` for implementation plan.
+Full interactive SOC dashboard and two-laptop live attack/mitigation pipeline.
+See `docs/DEMO_RUNBOOK.md` for the full two-laptop setup.
 
 ```bash
+# Launch Streamlit SOC dashboard (Detector machine)
 streamlit run src/dashboard/app.py
 # Opens SOC dashboard at http://localhost:8501
 # Tabs: Performance, Live Monitor, Transfer Matrix, ROC/AUC, Per-Class, Mitigation
+
+# Or run demo launcher with pre-flight checks:
+python scripts/demo_launcher.py --role detector --peer-ip <ATTACKER_IP>
+
+# Launch attack scripts from attacker machine (WSL / Scapy):
+python -m src.attack.runner syn-flood --target <DETECTOR_IP> --duration 30
+python -m src.attack.runner port-scan --target <DETECTOR_IP>
 ```
 
 ---
