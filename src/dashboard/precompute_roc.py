@@ -29,7 +29,9 @@ def generate_roc_curves_from_results(
     Computes high-fidelity ROC curve approximations using confusion matrix operating points
     and AUC estimates from Phase 1 and Phase 2.
     """
-    os.makedirs(os.path.dirname(output_json), exist_ok=True)
+    out_dir = os.path.dirname(output_json)
+    if out_dir:
+        os.makedirs(out_dir, exist_ok=True)
     summary = {}
     npz_data = {}
 

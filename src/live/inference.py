@@ -29,10 +29,16 @@ class InferenceEngine:
 
     def __init__(self, model_dir: str = "models/saved/", device: str = "cpu") -> None:
         self.device = torch.device(device)
-        self.model_dir = model_dir
-        self.config_path = os.path.join(model_dir, "model_config.json")
-        self.model_path = os.path.join(model_dir, "hybrid_model.pt")
-        self.scaler_path = os.path.join(model_dir, "temp_scaler.pt")
+        resolved_dir = model_dir
+        if not os.path.exists(os.path.join(resolved_dir, "hybrid_model.pt")):
+            alt_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", model_dir))
+            if os.path.exists(os.path.join(alt_dir, "hybrid_model.pt")):
+                resolved_dir = alt_dir
+
+        self.model_dir = resolved_dir
+        self.config_path = os.path.join(resolved_dir, "model_config.json")
+        self.model_path = os.path.join(resolved_dir, "hybrid_model.pt")
+        self.scaler_path = os.path.join(resolved_dir, "temp_scaler.pt")
 
         # Load config or default
         n_features = 20

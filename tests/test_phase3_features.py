@@ -89,7 +89,8 @@ def test_feature_extractor_known_normal():
 
 def test_feature_extractor_scaler_consistency():
     """Output remains bounded within reasonable scaling bounds."""
-    extractor = LiveFeatureExtractor(scaler_path="models/saved/scaler.pkl", window_size=5)
+    scaler_file = Path(__file__).resolve().parent.parent / "models" / "saved" / "scaler.pkl"
+    extractor = LiveFeatureExtractor(scaler_path=str(scaler_file), window_size=5)
     packets = []
     now = time.time()
     for i in range(5):

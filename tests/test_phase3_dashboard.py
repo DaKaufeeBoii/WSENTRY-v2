@@ -12,17 +12,19 @@ from src.live.inference import THREAT_LABELS
 from src.dashboard.precompute_roc import generate_roc_curves_from_results
 
 
+REPO_ROOT = Path(__file__).resolve().parent.parent
+
 def test_results_json_loadable():
     """phase1_results.json and phase2_results.json parse without error."""
-    p1_path = os.path.join("data", "processed", "phase1_results.json")
-    p2_path = os.path.join("data", "processed", "phase2_results.json")
+    p1_path = REPO_ROOT / "data" / "processed" / "phase1_results.json"
+    p2_path = REPO_ROOT / "data" / "processed" / "phase2_results.json"
 
-    assert os.path.exists(p1_path), f"Missing {p1_path}"
-    assert os.path.exists(p2_path), f"Missing {p2_path}"
+    assert p1_path.exists(), f"Missing {p1_path}"
+    assert p2_path.exists(), f"Missing {p2_path}"
 
-    with open(p1_path, "r") as f:
+    with open(p1_path, "r", encoding="utf-8") as f:
         p1 = json.load(f)
-    with open(p2_path, "r") as f:
+    with open(p2_path, "r", encoding="utf-8") as f:
         p2 = json.load(f)
 
     assert "same_dataset" in p1
@@ -33,12 +35,12 @@ def test_results_json_loadable():
 
 def test_transfer_matrix_keys():
     """All 9 source->target pairs exist in both matrices."""
-    p1_path = os.path.join("data", "processed", "phase1_results.json")
-    p2_path = os.path.join("data", "processed", "phase2_results.json")
+    p1_path = REPO_ROOT / "data" / "processed" / "phase1_results.json"
+    p2_path = REPO_ROOT / "data" / "processed" / "phase2_results.json"
 
-    with open(p1_path, "r") as f:
+    with open(p1_path, "r", encoding="utf-8") as f:
         p1 = json.load(f)
-    with open(p2_path, "r") as f:
+    with open(p2_path, "r", encoding="utf-8") as f:
         p2 = json.load(f)
 
     domains = ["WSN", "CIC", "Edge"]
@@ -68,8 +70,8 @@ def test_threat_label_mapping():
 def test_precompute_roc_output():
     """Precompute ROC function returns valid multi-class curves and saves files."""
     summary = generate_roc_curves_from_results(
-        output_npz="data/processed/roc_curves.npz",
-        output_json="data/processed/roc_curves.json",
+        output_npz=str(REPO_ROOT / "data" / "processed" / "roc_curves.npz"),
+        output_json=str(REPO_ROOT / "data" / "processed" / "roc_curves.json"),
     )
     for ds in ["WSN", "CIC", "Edge"]:
         assert ds in summary

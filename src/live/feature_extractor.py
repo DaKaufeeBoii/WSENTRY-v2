@@ -21,11 +21,17 @@ class LiveFeatureExtractor:
     def __init__(self, scaler_path: Optional[str] = "models/saved/scaler.pkl", window_size: int = 5) -> None:
         self.window_size = window_size
         self.scaler = None
-        if scaler_path and os.path.exists(scaler_path):
-            try:
-                self.scaler = joblib.load(scaler_path)
-            except Exception as e:
-                print(f"[LiveFeatureExtractor] Warning: Could not load scaler from {scaler_path}: {e}")
+        if scaler_path:
+            resolved_path = scaler_path
+            if not os.path.exists(resolved_path):
+                alt_path = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", scaler_path))
+                if os.path.exists(alt_path):
+                    resolved_path = alt_path
+            if os.path.exists(resolved_path):
+                try:
+                    self.scaler = joblib.load(resolved_path)
+                except Exception as e:
+                    print(f"[LiveFeatureExtractor] Warning: Could not load scaler from {resolved_path}: {e}")
         if self.scaler is None:
             # Fallback initialized scaler with neutral medians/scales
             self.scaler = RobustScaler()
