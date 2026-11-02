@@ -64,7 +64,6 @@ def ts():
 
 # --- Finding the W-SENTRY laptop on whatever network both machines are on ---
 DISCOVERY_PORT = 50505
-KNOWN_TARGET = "172.168.1.83"  # dashboard laptop's IP on the network used for the first test
 SAVED = os.path.join(os.path.dirname(os.path.abspath(__file__)), ".wsentry_target")
 
 
@@ -140,7 +139,7 @@ def find_target(port):
     saved = []
     if os.path.exists(SAVED):
         saved.append(open(SAVED).read().strip())
-    for ip in saved + [KNOWN_TARGET]:
+    for ip in saved:
         if ip and is_wsentry(ip, port):
             return ip, port, "saved address"
     print("  no broadcast reply - scanning the local subnet ...")

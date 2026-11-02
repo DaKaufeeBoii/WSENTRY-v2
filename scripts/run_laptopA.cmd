@@ -14,9 +14,9 @@ if exist ".venv\Scripts\python.exe" set "PY=.venv\Scripts\python.exe"
 echo   python: %PY%
 echo.
 
-REM One-time firewall rules (need admin; harmless if they fail or already exist).
-netsh advfirewall firewall add rule name="W-SENTRY model" dir=in action=allow protocol=TCP localport=8000 >nul 2>&1
-netsh advfirewall firewall add rule name="W-SENTRY discovery" dir=in action=allow protocol=UDP localport=50505 >nul 2>&1
+REM One-time firewall rules (need admin; warns if they could not be added).
+netsh advfirewall firewall add rule name="W-SENTRY model" dir=in action=allow protocol=TCP localport=8000 >nul 2>&1 || echo   WARN: firewall rule for TCP 8000 not added. Run this file as Administrator once, or laptop B cannot connect.
+netsh advfirewall firewall add rule name="W-SENTRY discovery" dir=in action=allow protocol=UDP localport=50505 >nul 2>&1 || echo   WARN: firewall rule for UDP 50505 not added. Run this file as Administrator once, or laptop B cannot connect.
 
 echo Starting detector (model server) on port 8000 ...
 start "W-SENTRY detector" cmd /k ""%PY%" scripts\detector_server.py"

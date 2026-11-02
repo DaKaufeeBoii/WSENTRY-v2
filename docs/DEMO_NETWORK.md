@@ -66,8 +66,8 @@ netsh advfirewall firewall add rule name="W-SENTRY discovery" dir=in action=allo
 `find_target()` in `attacker.py`, in order:
 1. **UDP broadcast** `WSENTRY_DISCOVER` → `255.255.255.255:50505` and each `*.255`;
    the detector replies `{"wsentry":true,"host","port":8000}`.
-2. **Saved / known IP** — `scripts/.wsentry_target` (last that worked), then the
-   `KNOWN_TARGET` constant; each confirmed with `GET /api/hello`.
+2. **Saved IP** — `.wsentry_target` beside `attacker.py` (the last address that
+   worked), confirmed with `GET /api/hello`.
 3. **Subnet scan** — `GET /api/hello` on every host of each local subnet.
 
 Falls back to a typed IP: `python attacker.py <ip> dos`.
