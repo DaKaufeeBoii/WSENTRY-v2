@@ -1,0 +1,64 @@
+{
+ "dataset": "edge",
+ "held_out": "MITM",
+ "model": "xgb",
+ "seed": 2,
+ "auroc_unknown": 0.8598767863100689,
+ "detect_at_5pct_fpr": 0.0,
+ "alerted_as_attack": 1.0,
+ "n_unknown_test": 243,
+ "known": {
+  "n_test": 31317,
+  "accuracy": 0.9535396110738577,
+  "macro_f1": 0.958389335406946,
+  "weighted_f1": 0.9538123308978244,
+  "balanced_accuracy": 0.9654146575284783,
+  "majority_baseline": 0.5293610499089951,
+  "far": 0.010699588477366255,
+  "per_class": {
+   "0": {
+    "precision": 0.9780309194467046,
+    "recall": 0.9893004115226337,
+    "f1": 0.983633387888707,
+    "support": 4860
+   },
+   "3": {
+    "precision": 0.8958140396369698,
+    "recall": 0.9791476870128556,
+    "f1": 0.9356289597136915,
+    "support": 9879
+   },
+   "4": {
+    "precision": 0.9857719669294367,
+    "recall": 0.9277958740499457,
+    "f1": 0.9559056586184395,
+    "support": 16578
+   }
+  },
+  "classes": [
+   0,
+   3,
+   4
+  ],
+  "confusion_matrix": [
+   [
+    4808,
+    15,
+    37
+   ],
+   [
+    21,
+    9673,
+    185
+   ],
+   [
+    87,
+    1110,
+    15381
+   ]
+  ]
+ },
+ "seconds": 2.1,
+ "device": "cuda",
+ "fpr": 0.05
+}

@@ -10,13 +10,14 @@ from sklearn.metrics import (
 import xgboost as xgb
 
 
-def train_rf(X_train, y_train, n_estimators=100, random_state=42):
-    clf = RandomForestClassifier(n_estimators=n_estimators, random_state=random_state, n_jobs=-1)
+def train_rf(X_train, y_train, n_estimators=100, random_state=42, class_weight=None):
+    clf = RandomForestClassifier(n_estimators=n_estimators, random_state=random_state, n_jobs=-1,
+                                 class_weight=class_weight)
     clf.fit(X_train, y_train)
     return clf
 
 
-def train_xgb(X_train, y_train, n_estimators=100, random_state=42):
+def train_xgb(X_train, y_train, n_estimators=100, random_state=42, sample_weight=None):
     # ponytail: XGBoost needs contiguous 0..N labels
     from sklearn.preprocessing import LabelEncoder
     le = LabelEncoder()
@@ -32,7 +33,7 @@ def train_xgb(X_train, y_train, n_estimators=100, random_state=42):
         n_jobs=-1,
         eval_metric="mlogloss",
     )
-    clf.fit(X_train, y_enc)
+    clf.fit(X_train, y_enc, sample_weight=sample_weight)
     clf._wsentry_le = le  # stash for inverse transform
     return clf
 

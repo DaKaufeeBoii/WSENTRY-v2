@@ -1,0 +1,81 @@
+{
+ "dataset": "cic",
+ "held_out": "Recon",
+ "model": "rf",
+ "seed": 1,
+ "auroc_unknown": 0.9881444356516896,
+ "detect_at_5pct_fpr": 0.9912854030501089,
+ "alerted_as_attack": 0.5555555555555556,
+ "n_unknown_test": 459,
+ "known": {
+  "n_test": 59541,
+  "accuracy": 0.9945079860936161,
+  "macro_f1": 0.6999723204040628,
+  "weighted_f1": 0.9942273630447152,
+  "balanced_accuracy": 0.6883808704503984,
+  "majority_baseline": 0.9649485228665962,
+  "far": 0.052259887005649715,
+  "per_class": {
+   "0": {
+    "precision": 0.8575079872204473,
+    "recall": 0.9477401129943502,
+    "f1": 0.9003690036900369,
+    "support": 1416
+   },
+   "2": {
+    "precision": 0.8209219858156028,
+    "recall": 0.7384370015948963,
+    "f1": 0.7774979009235936,
+    "support": 627
+   },
+   "3": {
+    "precision": 0.9999825805215392,
+    "recall": 0.9991645490305288,
+    "f1": 0.9995733974107834,
+    "support": 57454
+   },
+   "4": {
+    "precision": 0.6,
+    "recall": 0.06818181818181818,
+    "f1": 0.12244897959183673,
+    "support": 44
+   }
+  },
+  "classes": [
+   0,
+   2,
+   3,
+   4
+  ],
+  "confusion_matrix": [
+   [
+    1342,
+    72,
+    0,
+    2
+   ],
+   [
+    163,
+    463,
+    1,
+    0
+   ],
+   [
+    36,
+    12,
+    57406,
+    0
+   ],
+   [
+    24,
+    17,
+    0,
+    3
+   ]
+  ]
+ },
+ "seconds": 3.8,
+ "device": "cuda",
+ "fpr": 0.05,
+ "data": "data/raw/ciciot2023_kaggle_csv/wataiData/csv/CICIoT2023/part-0000[0-9]-*.csv"
+}

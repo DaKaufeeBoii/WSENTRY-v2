@@ -1,0 +1,162 @@
+{
+ "dataset": "cic",
+ "model": "xgb",
+ "seed": 0,
+ "metrics": {
+  "n_test": 60000,
+  "accuracy": 0.992,
+  "macro_f1": 0.8332551537195785,
+  "weighted_f1": 0.9918046942066092,
+  "balanced_accuracy": 0.8215550183314144,
+  "majority_baseline": 0.9575666666666667,
+  "far": 0.06638418079096045,
+  "per_class": {
+   "0": {
+    "precision": 0.8293601003764115,
+    "recall": 0.9336158192090396,
+    "f1": 0.878405315614618,
+    "support": 1416
+   },
+   "2": {
+    "precision": 0.8479166666666667,
+    "recall": 0.6491228070175439,
+    "f1": 0.7353206865401988,
+    "support": 627
+   },
+   "3": {
+    "precision": 0.999860736356515,
+    "recall": 0.9997041111149789,
+    "f1": 0.9997824176015457,
+    "support": 57454
+   },
+   "4": {
+    "precision": 0.735966735966736,
+    "recall": 0.7037773359840954,
+    "f1": 0.7195121951219512,
+    "support": 503
+   }
+  },
+  "classes": [
+   0,
+   2,
+   3,
+   4
+  ],
+  "confusion_matrix": [
+   [
+    1322,
+    41,
+    0,
+    53
+   ],
+   [
+    155,
+    407,
+    0,
+    65
+   ],
+   [
+    8,
+    0,
+    57437,
+    9
+   ],
+   [
+    109,
+    32,
+    8,
+    354
+   ]
+  ],
+  "roc_auc": 0.9983639567551159,
+  "pr_auc": 0.900940583736562
+ },
+ "seconds": 3.4,
+ "n_rows": 300000,
+ "row_cap": 300000,
+ "data": "data/raw/ciciot2023_kaggle_csv/wataiData/csv/CICIoT2023/part-0000[0-9]-*.csv",
+ "features": [
+  "flow_duration",
+  "Header_Length",
+  "Protocol Type",
+  "Duration",
+  "Rate",
+  "Srate",
+  "Drate",
+  "fin_flag_number",
+  "syn_flag_number",
+  "rst_flag_number",
+  "psh_flag_number",
+  "ack_flag_number",
+  "ece_flag_number",
+  "cwr_flag_number",
+  "ack_count",
+  "syn_count",
+  "fin_count",
+  "urg_count",
+  "rst_count",
+  "HTTP",
+  "HTTPS",
+  "DNS",
+  "Telnet",
+  "SMTP",
+  "SSH",
+  "IRC",
+  "TCP",
+  "UDP",
+  "DHCP",
+  "ARP",
+  "ICMP",
+  "IPv",
+  "LLC",
+  "Tot sum",
+  "Min",
+  "Max",
+  "AVG",
+  "Std",
+  "Tot size",
+  "Number",
+  "Magnitue",
+  "Radius",
+  "Covariance",
+  "Variance",
+  "Weight"
+ ],
+ "config": {
+  "max_rows": {
+   "wsn": null,
+   "cic": 300000,
+   "edge": null
+  },
+  "sample_seed": 0,
+  "split": {
+   "train": 0.7,
+   "val": 0.1,
+   "test": 0.2
+  },
+  "transform": "sign(x)*log1p(|x|), clip [-50, 50], robust scaler fit on train",
+  "class_weight": "N/(C*n_c) clipped to [0.5, 5], same for all models; no SMOTE",
+  "time_steps": 5,
+  "rf": {
+   "n_estimators": 100
+  },
+  "xgb": {
+   "n_estimators": 100,
+   "max_depth": 6,
+   "learning_rate": 0.1
+  },
+  "hybrid": {
+   "epochs": 20,
+   "batch_size": 256,
+   "lr": 0.001
+  }
+ },
+ "device": "cuda",
+ "git_commit": "7bedc6a",
+ "versions": {
+  "sklearn": "1.9.1",
+  "xgboost": "3.2.0",
+  "torch": "2.11.0+cu128",
+  "numpy": "2.4.6"
+ }
+}

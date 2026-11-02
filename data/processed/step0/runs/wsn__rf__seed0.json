@@ -1,0 +1,132 @@
+{
+ "dataset": "wsn",
+ "model": "rf",
+ "seed": 0,
+ "metrics": {
+  "n_test": 74933,
+  "accuracy": 0.9971307701546716,
+  "macro_f1": 0.9766526830437765,
+  "weighted_f1": 0.9971344788539414,
+  "balanced_accuracy": 0.9821032535823848,
+  "majority_baseline": 0.9076641800008007,
+  "far": 0.001764342635339783,
+  "per_class": {
+   "0": {
+    "precision": 0.9986320914292438,
+    "recall": 0.9982356573646602,
+    "f1": 0.9984338350453306,
+    "support": 68014
+   },
+   "1": {
+    "precision": 0.9850039463299132,
+    "recall": 0.9397590361445783,
+    "f1": 0.9618497109826589,
+    "support": 1328
+   },
+   "2": {
+    "precision": 0.9917338709677419,
+    "recall": 0.9979711909109353,
+    "f1": 0.9948427545757913,
+    "support": 4929
+   },
+   "3": {
+    "precision": 0.913769123783032,
+    "recall": 0.9924471299093656,
+    "f1": 0.9514844315713251,
+    "support": 662
+   }
+  },
+  "classes": [
+   0,
+   1,
+   2,
+   3
+  ],
+  "confusion_matrix": [
+   [
+    67894,
+    19,
+    39,
+    62
+   ],
+   [
+    78,
+    1248,
+    2,
+    0
+   ],
+   [
+    10,
+    0,
+    4919,
+    0
+   ],
+   [
+    5,
+    0,
+    0,
+    657
+   ]
+  ],
+  "roc_auc": 0.9963062747757868,
+  "pr_auc": 0.987545967155925
+ },
+ "seconds": 5.4,
+ "n_rows": 374661,
+ "row_cap": null,
+ "features": [
+  "Time",
+  "Is_CH",
+  "Dist_To_CH",
+  "ADV_S",
+  "ADV_R",
+  "JOIN_S",
+  "JOIN_R",
+  "SCH_S",
+  "SCH_R",
+  "Rank",
+  "DATA_S",
+  "DATA_R",
+  "Data_Sent_To_BS",
+  "dist_CH_To_BS",
+  "send_code",
+  "Expaned Energy"
+ ],
+ "config": {
+  "max_rows": {
+   "wsn": null,
+   "cic": 300000,
+   "edge": null
+  },
+  "sample_seed": 0,
+  "split": {
+   "train": 0.7,
+   "val": 0.1,
+   "test": 0.2
+  },
+  "transform": "sign(x)*log1p(|x|), clip [-50, 50], robust scaler fit on train",
+  "class_weight": "N/(C*n_c) clipped to [0.5, 5], same for all models; no SMOTE",
+  "time_steps": 5,
+  "rf": {
+   "n_estimators": 100
+  },
+  "xgb": {
+   "n_estimators": 100,
+   "max_depth": 6,
+   "learning_rate": 0.1
+  },
+  "hybrid": {
+   "epochs": 20,
+   "batch_size": 256,
+   "lr": 0.001
+  }
+ },
+ "device": "cuda",
+ "git_commit": "7bedc6a",
+ "versions": {
+  "sklearn": "1.9.1",
+  "xgboost": "3.2.0",
+  "torch": "2.11.0+cu128",
+  "numpy": "2.4.6"
+ }
+}

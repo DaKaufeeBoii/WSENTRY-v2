@@ -57,10 +57,10 @@ def test_downsampling_respects_max_points(tmp_path, synthetic):
 
 def test_absent_class_is_skipped_not_fatal(tmp_path, synthetic):
     y_true, probs = synthetic
-    y_missing = np.where(y_true == 3, 0, y_true)  # column 3 now unused
+    y_missing = np.where(y_true == 3, 0, y_true)  # column index 3 (class 4) now unused
     s = _run(tmp_path, y_missing, probs, name="Edge")
     assert len(s["curves"]) == len(CLASSES) - 1
-    assert 3 not in {c["class_id"] for c in s["curves"]}
+    assert CLASSES[3] not in {c["class_id"] for c in s["curves"]}
 
 
 def test_npz_keeps_full_fidelity(tmp_path, synthetic):

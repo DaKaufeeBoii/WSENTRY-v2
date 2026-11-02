@@ -1,0 +1,64 @@
+{
+ "dataset": "edge",
+ "held_out": "DDoS",
+ "model": "xgb",
+ "seed": 4,
+ "auroc_unknown": 0.7266590357504111,
+ "detect_at_5pct_fpr": 0.3035732361575058,
+ "alerted_as_attack": 0.9977730539528292,
+ "n_unknown_test": 9879,
+ "known": {
+  "n_test": 21681,
+  "accuracy": 0.9755085097550851,
+  "macro_f1": 0.839954867730762,
+  "weighted_f1": 0.9794770977458647,
+  "balanced_accuracy": 0.9868991925934862,
+  "majority_baseline": 0.7646326276463262,
+  "far": 0.0102880658436214,
+  "per_class": {
+   "0": {
+    "precision": 0.9812321501427989,
+    "recall": 0.9897119341563786,
+    "f1": 0.9854538004507273,
+    "support": 4860
+   },
+   "2": {
+    "precision": 0.3796875,
+    "recall": 1.0,
+    "f1": 0.5503963759909399,
+    "support": 243
+   },
+   "4": {
+    "precision": 0.9973976082780841,
+    "recall": 0.9709856436240801,
+    "f1": 0.9840144267506189,
+    "support": 16578
+   }
+  },
+  "classes": [
+   0,
+   2,
+   4
+  ],
+  "confusion_matrix": [
+   [
+    4810,
+    8,
+    42
+   ],
+   [
+    0,
+    243,
+    0
+   ],
+   [
+    92,
+    389,
+    16097
+   ]
+  ]
+ },
+ "seconds": 1.2,
+ "device": "cuda",
+ "fpr": 0.05
+}

@@ -1,0 +1,81 @@
+{
+ "dataset": "cic",
+ "held_out": "Web",
+ "model": "xgb",
+ "seed": 0,
+ "auroc_unknown": 0.9921193930298483,
+ "detect_at_5pct_fpr": 1.0,
+ "alerted_as_attack": 0.7,
+ "n_unknown_test": 30,
+ "known": {
+  "n_test": 59970,
+  "accuracy": 0.992296148074037,
+  "macro_f1": 0.8339927667379412,
+  "weighted_f1": 0.9920507798702772,
+  "balanced_accuracy": 0.8176792121588733,
+  "majority_baseline": 0.9580456895114223,
+  "far": 0.04943502824858757,
+  "per_class": {
+   "0": {
+    "precision": 0.8262737875997545,
+    "recall": 0.9505649717514124,
+    "f1": 0.8840722495894909,
+    "support": 1416
+   },
+   "2": {
+    "precision": 0.8505050505050505,
+    "recall": 0.671451355661882,
+    "f1": 0.750445632798574,
+    "support": 627
+   },
+   "3": {
+    "precision": 0.9998259174152218,
+    "recall": 0.999651895429387,
+    "f1": 0.9997388988494142,
+    "support": 57454
+   },
+   "4": {
+    "precision": 0.763681592039801,
+    "recall": 0.6490486257928119,
+    "f1": 0.7017142857142857,
+    "support": 473
+   }
+  },
+  "classes": [
+   0,
+   2,
+   3,
+   4
+  ],
+  "confusion_matrix": [
+   [
+    1346,
+    35,
+    0,
+    35
+   ],
+   [
+    159,
+    421,
+    0,
+    47
+   ],
+   [
+    5,
+    2,
+    57434,
+    13
+   ],
+   [
+    119,
+    37,
+    10,
+    307
+   ]
+  ]
+ },
+ "seconds": 3.5,
+ "device": "cuda",
+ "fpr": 0.05,
+ "data": "data/raw/ciciot2023_kaggle_csv/wataiData/csv/CICIoT2023/part-0000[0-9]-*.csv"
+}

@@ -14,6 +14,8 @@ export function Topbar() {
   }, []);
 
   const threatHigh = feed.threatRate >= 25;
+  const inbound =
+    feed.demo?.active && feed.demo.remote && Date.now() - feed.demo.lastArrival < 4000;
   return (
     <header className="h-16 shrink-0 border-b border-edge bg-bg/70 backdrop-blur flex items-center gap-4 px-5">
       <div className="min-w-0">
@@ -21,6 +23,12 @@ export function Topbar() {
         <p className="text-[11.5px] text-faint truncate">{current.desc}</p>
       </div>
       <div className="ml-auto flex items-center gap-3">
+        {inbound && (
+          <span className="inline-flex items-center gap-2 rounded-full border border-bad/50 bg-bad/15 px-3 py-1 text-[11.5px] font-semibold text-bad animate-pulse">
+            <span className="w-1.5 h-1.5 rounded-full bg-bad" />
+            incoming traffic from {feed.demo.attacker}
+          </span>
+        )}
         <span
           className={`hidden sm:inline-flex items-center gap-2 rounded-full border px-3 py-1 text-[11.5px] tnum ${
             threatHigh ? "border-bad/40 bg-bad/10 text-bad" : "border-edge bg-surface2 text-muted"

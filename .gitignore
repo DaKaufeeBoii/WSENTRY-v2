@@ -85,15 +85,24 @@ data/processed/*.npy
 # PyTorch model weights
 *.pth
 
-# Pickle files
+# Saved model artifacts: allow pre-trained checkpoints in models/saved
 *.pkl
+!models/saved/*.pkl
 
+# Frontend dependencies
+node_modules/
+.npm/
+
+# Cheat sheets and personal notes
+FOR_YOU.md
+for_you.md
+
+# External research papers
+research-papers/
+
+# --- merged from local (pre-Phase-3) .gitignore ---
 # Keras/HDF5 models
 *.h5
-
-# Saved model checkpoints (the model card stays tracked)
-models/
-!models/README.md
 
 # Training logs
 logs/
@@ -103,3 +112,6 @@ logs/
 *.tmp
 temp/
 tmp/
+
+# Attacker script caches the last detector IP here (per machine)
+.wsentry_target
