@@ -1,0 +1,64 @@
+{
+ "dataset": "cic",
+ "held_out": "Spoofing",
+ "model": "xgb",
+ "seed": 3,
+ "auroc_unknown": 0.9910600919346227,
+ "detect_at_5pct_fpr": 1.0,
+ "alerted_as_attack": 0.4525316455696203,
+ "n_unknown_test": 632,
+ "known": {
+  "n_test": 59368,
+  "accuracy": 0.998147149979787,
+  "macro_f1": 0.950281264880774,
+  "weighted_f1": 0.9981188536421904,
+  "balanced_accuracy": 0.9423831617424369,
+  "majority_baseline": 0.967912006468131,
+  "far": 0.01998572448251249,
+  "per_class": {
+   "0": {
+    "precision": 0.9468965517241379,
+    "recall": 0.9800142755174875,
+    "f1": 0.9631708172571027,
+    "support": 1401
+   },
+   "3": {
+    "precision": 0.9999651931778628,
+    "recall": 0.9999129874876007,
+    "f1": 0.9999390896513317,
+    "support": 57463
+   },
+   "4": {
+    "precision": 0.9323144104803494,
+    "recall": 0.8472222222222222,
+    "f1": 0.8877338877338877,
+    "support": 504
+   }
+  },
+  "classes": [
+   0,
+   3,
+   4
+  ],
+  "confusion_matrix": [
+   [
+    1373,
+    1,
+    27
+   ],
+   [
+    1,
+    57458,
+    4
+   ],
+   [
+    76,
+    1,
+    427
+   ]
+  ]
+ },
+ "seconds": 4.5,
+ "device": "cuda",
+ "fpr": 0.05
+}

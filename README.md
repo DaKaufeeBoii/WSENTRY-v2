@@ -80,6 +80,8 @@ W-SENTRY is an AI-powered wireless network intrusion detection system that achie
 
 ### Setup
 
+Setting up a fresh Windows laptop for the two-laptop demo? Double-click `setup_laptopA.cmd`, or follow [SETUP_NEW_LAPTOPS.md](SETUP_NEW_LAPTOPS.md).
+
 ```bash
 git clone https://github.com/Riteesh-2k6/w-sentry.git
 cd w-sentry
@@ -119,14 +121,31 @@ python run_phase2.py
 #   - Temperature scaling calibration
 ```
 
-### Phase 3: Dashboard + Live Demo (TODO)
+### Phase 3: Dashboard + Live Demo
 
-See `docs/PHASE3_PLAN.md` for implementation plan.
+Full interactive SOC dashboard and two-laptop live attack/mitigation pipeline.
+See `docs/DEMO_RUNBOOK.md` for the two-laptop setup and `docs/PHASE3_INTEGRATION.md`
+for how Phase 3 was integrated and how to run everything.
 
 ```bash
-streamlit run src/dashboard/app.py
-# Opens SOC dashboard at http://localhost:8501
+# 0. Install Phase 3 deps
+pip install -r requirements_phase3.txt
+
+# 1. Train a real, deployable checkpoint (the bundled one is an untrained scaffold)
+python scripts/train_model.py
+# -> models/saved/{hybrid_model.pt,scaler.pkl,temp_scaler.pt} + held-out metrics
+
+# 2. Show off the model (metrics + live detection → mitigation, single machine)
+scripts/showcase_model.sh
+
+# 3. Launch the Streamlit SOC dashboard (detector machine)
+scripts/run_dashboard.sh          # http://localhost:8501
 # Tabs: Performance, Live Monitor, Transfer Matrix, ROC/AUC, Per-Class, Mitigation
+
+# 4. Launch simulated attacks (attacker machine, WSL / Scapy) — private LAN only
+scripts/run_attack.sh syn-flood --target <DETECTOR_IP> --duration 30
+scripts/run_attack.sh port-scan --target <DETECTOR_IP>
+scripts/run_demo.sh  --target <DETECTOR_IP> --gateway <GATEWAY_IP>   # full sequence
 ```
 
 ---
@@ -265,4 +284,4 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ---
 
-**Status:** ✅ Phase 1 Complete · ✅ Phase 2 Complete · 🚧 Phase 3 (Dashboard) In Progress · 📝 Phase 4 (Paper) Draft Ready
+**Status:** ✅ Phase 1 Complete · ✅ Phase 2 Complete · ✅ Phase 3 (Dashboard + Live Demo) Integrated · 📝 Phase 4 (Paper) Draft Ready

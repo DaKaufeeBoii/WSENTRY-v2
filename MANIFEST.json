@@ -1,0 +1,32 @@
+{
+  "package": "w-sentry-deliverables-20261002",
+  "created": "2026-10-02T22:39:47.732141",
+  "contents": {
+    "paper": "IEEE conference paper draft + 4 figures",
+    "results": "Phase 1 (RF/XGB baselines) + Phase 2 (Hybrid DL + DANN)",
+    "source_code": "Complete Python codebase (data, features, models)",
+    "phase3_plan": "Dashboard implementation plan (700 lines, 9 tasks)",
+    "documentation": "README, LICENSE, setup instructions"
+  },
+  "metrics": {
+    "same_dataset_accuracy": {
+      "WSN-DS": "98.1%",
+      "CIC-IoT-2023": "97.8%",
+      "Edge-IIoTset": "94.4%"
+    },
+    "cross_dataset_transfer": {
+      "WSN_to_Edge": "80.7%",
+      "Edge_to_CIC": "61.8%"
+    },
+    "DANN_2domain": {
+      "CIC": "96.5%",
+      "Edge": "96.3%"
+    }
+  },
+  "requirements": {
+    "python": "3.11+",
+    "pytorch": "2.6.0",
+    "cuda": "12.1+ (optional, CPU fallback supported)",
+    "ram": "8GB minimum, 16GB recommended"
+  }
+}

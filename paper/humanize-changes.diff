@@ -1,0 +1,396 @@
+diff --git a/paper-6page-before-humanize.tex b/C:/Users/Riteesh/Programming/w-sentry/paper/w-sentry-paper-ieee.tex
+index db70ec1..41f1c1b 100644
+--- a/paper-6page-before-humanize.tex
++++ b/C:/Users/Riteesh/Programming/w-sentry/paper/w-sentry-paper-ieee.tex
+@@ -5,28 +5,55 @@
+\usepackage{graphicx}
+\usepackage{textcomp}
+\usepackage{xcolor}
+[-\usepackage{booktabs}-]
+\usepackage{array}
+\usepackage{tikz}
+\usetikzlibrary{positioning,arrows.meta}
+\newcolumntype{L}[1]{>{\raggedright\arraybackslash}p{#1}}
+\graphicspath{{figures/}}
+\hyphenation{Edge-IIoTset BiLSTM}
+{+\usepackage[hidelinks]{hyperref}% clickable [n] citations and cross-references, no colored boxes+}
+{+\renewcommand{\arraystretch}{1.0}% table row spacing; 1.05 or more pushes the paper to 7 pages+}
+{+% Starts a new, centered row of author blocks. IEEEtran only centers the author+}
+{+% list as a whole, so a row it wraps by itself drifts sideways. Use \linebreakand+}
+{+% after every third author and \and between authors on the same row.+}
+{+\makeatletter+}
+{+\newcommand{\linebreakand}{\end{@IEEEauthorhalign}\hfill\mbox{}\par+}
+{+  \mbox{}\hfill\begin{@IEEEauthorhalign}}+}
+{+\makeatother+}
+\begin{document}
+
+\title{Same-Dataset Accuracy Does Not Transfer: Cross-Dataset Evaluation of Intrusion Detectors on WSN-DS, CICIoT2023, and Edge-IIoTset}
+
+% [-Shared-affiliation author-]{+One+} block [-(IEEE allows grouping authors-]{+per author, three per row. A 5th or 6th author goes after Shaik Gafar+}
+{+% with \and; a 7th starts a third row+} with [-one affiliation).-]{+\linebreakand.+}
+% TODO:[-add-] Mogili Vikas Goud's and Shaik Gafar's[-own-] emails [-to-]{+go on+} the [-email line.-]{+last line of their blocks.+}
+\author{\IEEEauthorblockN{Riteesh [-Thiruveedhula, Velagala-]{+Thiruveedhula}+}
+{+\IEEEauthorblockA{\textit{Dept. of CSE-AIML} \\+}
+{+\textit{K G Reddy College of Engineering}\\+}
+{+\textit{and Technology}, Hyderabad, India \\+}
+{+riteesh.vnsp@gmail.com}+}
+{+\and+}
+{+\IEEEauthorblockN{Velagala+} Sai Tarun [-Reddy, Mogili Vikas Goud, and Shaik Gafar}-]{+Reddy}+}
+\IEEEauthorblockA{\textit{Dept. of [-CSE-AIML, K-]{+CSE-AIML} \\+}
+{+\textit{K+} G Reddy College of [-Engineering and-]{+Engineering}\\+}
+{+\textit{and+} Technology}, Hyderabad, India \\[-riteesh.vnsp@gmail.com,-]
+saitarunrdy@gmail.com}
+{+\and+}
+{+\IEEEauthorblockN{Mogili Vikas Goud}+}
+{+\IEEEauthorblockA{\textit{Dept. of CSE-AIML} \\+}
+{+\textit{K G Reddy College of Engineering}\\+}
+{+\textit{and Technology}, Hyderabad, India}+}
+{+\linebreakand+}
+{+\IEEEauthorblockN{Shaik Gafar}+}
+{+\IEEEauthorblockA{\textit{Dept. of CSE-AIML} \\+}
+{+\textit{K G Reddy College of Engineering}\\+}
+{+\textit{and Technology}, Hyderabad, India}+}
+}
+
+\maketitle
+
+\begin{abstract}
+Intrusion detection models are usually trained and tested on a single benchmark, which [-reveals-]{+says+} little about how they behave on traffic from [-a different network environment.-]{+another network.+} We [-study-]{+measure+} this[-question-] on three public wireless and Internet of Things security datasets, WSN-DS, CICIoT2023, and Edge-IIoTset, [-whose-]{+after mapping their+} attack labels[-we map-] to a shared five-class taxonomy. [-We compare-]{+The models are+} Random Forest and XGBoost baselines, a hybrid [-convolutional--recurrent-]{+convolutional-recurrent+} model with self-attention, and a domain adversarial neural network that reuses the hybrid [-encoder,-]{+encoder and is trained on pooled data from two of the datasets. Each model is scored+} on held-out[-same-dataset-] test [-sets, under a three-by-three train-on-one, test-on-another protocol, and, for-]{+data from+} the [-adversarial model, in a pooled two-dataset setting.-]{+datasets it was trained on. Random Forest and the hybrid model are also trained on each dataset and tested on the other two.+} Same-dataset accuracy ranges from 91.9\% to [-99.6\%, whereas cross-dataset-]{+99.6\%. Cross-dataset+} accuracy [-reaches-]{+is+} at most 67.6\% for Random Forest and 80.7\% for the hybrid model, and every Random Forest transfer score [-is-]{+falls+} below the share of the largest class in the target test set. On Edge-IIoTset, Random Forest reaches 92.1\% accuracy but only 65.9\% macro-F1. The adversarial model scores 1.1 to 1.3 points below[-per-dataset training. We document where-] the {+hybrid model trained on each dataset separately. Scoring+} protocols differ between [-models-]{+models,+} and [-conclude that-]{+we list each difference. For these datasets,+} same-dataset accuracy alone is [-insufficient evidence for these datasets,-]{+not sufficient evidence,+} and [-that-]{+a+} transfer [-claims require-]{+claim needs+} matched scoring protocols, per-class metrics, and repeated runs.
+\end{abstract}
+
+\begin{IEEEkeywords}
+@@ -34,102 +61,108 @@ cross-dataset evaluation, domain adaptation, Internet of Things, intrusion detec
+\end{IEEEkeywords}
+
+\section{Introduction}
+Wireless sensor networks and Internet of Things (IoT) deployments expose many resource-constrained devices to denial-of-service, spoofing, and reconnaissance attacks. [-Learning-based-]{+Studies of learning-based+} intrusion detection systems (IDSs) report very high accuracy on individual [-benchmarks, but-]{+benchmarks. Such+} a[-benchmark-] score[-only-] measures how well a model recognizes attacks [-from-]{+produced by+} the[-same-] capture process, feature extractor, and label set it was trained [-on; a-]{+on. A+} deployed detector [-faces-]{+sees+} a different network and {+a different+} measurement pipeline. Sommer and Paxson argued that[-evaluating-] machine learning for intrusion detection [-requires particular care-]{+calls+} for [-related reasons-]{+especially careful evaluation+} \cite{sommer2010}.
+
+We measure the gap between same-dataset and cross-dataset [-behavior-]{+results+} on three public benchmarks that differ in network layer and measurement [-level,-]{+level:+} WSN-DS \cite{almomani2016}, CICIoT2023 \cite{neto2023}, and Edge-IIoTset [-\cite{ferrag2022}, and ask:-]{+\cite{ferrag2022}. We ask+} (i) how same-dataset results compare with results when a model trained on one dataset is tested on another; (ii) whether tree ensembles and a hybrid network [-that-]{+behave differently under the two evaluations, where the hybrid+} combines a convolutional neural network (CNN), a bidirectional long short-term memory (BiLSTM) network, and [-attention behave differently under the two evaluations;-]{+attention;+} and (iii) whether a domain adversarial neural network (DANN) \cite{ganin2016} trained on two pooled datasets changes same-dataset results relative to per-dataset training. Our contributions are:
+\begin{itemize}
+\item a shared five-class label mapping and two feature tracks for the three datasets, documented in Tables~\ref{tab:labels} and~\ref{tab:slots};
+\item same-dataset results for Random Forest (RF) \cite{breiman2001}, XGBoost \cite{chen2016}, the hybrid model, and DANN, [-with-]{+plus+} confusion-matrix metrics [-showing-]{+for the two tree baselines, which show+} that {+RF's+} 92.1\% accuracy on Edge-IIoTset [-coexists-]{+comes+} with a macro-F1 of 65.9\%;
+\item transfer matrices for RF and the hybrid model, in which every RF transfer accuracy is below the share of the largest class in the target test set;
+\item [-an account-]{+a list+} of the protocol differences between experiments [-(Table~\ref{tab:protocol}) that bounds-]{+(Table~\ref{tab:protocol}), which limit+} what the comparisons can [-support.-]{+show.+}
+\end{itemize}
+
+\section{Related Work}\label{sec:related}
+WSN-DS covers four denial-of-service attacks on wireless sensor networks running the low-energy adaptive clustering hierarchy (LEACH) protocol \cite{heinzelman2000,almomani2016}. CICIoT2023 contains 33 attacks in seven categories executed against 105 IoT devices \cite{neto2023}. Edge-IIoTset was generated on an IoT and industrial IoT (IIoT) testbed and contains 14 attacks in five categories \cite{ferrag2022}.
+
+Surveys of deep learning for intrusion detection catalog architectures, datasets, and comparisons \cite{ferrag2020}. RF \cite{breiman2001} and gradient-boosted trees in XGBoost \cite{chen2016} are standard strong baselines on tabular network features. Hybrid networks combining convolutions, long short-term memory (LSTM) \cite{hochreiter1997} in bidirectional form \cite{schuster1997}, and attention \cite{vaswani2017} are [-frequent-]{+common+} in recent IDS work, for example on wireless IoT sensor networks [-\cite{phalaagae2025}; our-]{+\cite{phalaagae2025}. Our+} hybrid model belongs to this [-family but is our own configuration,-]{+family; we configured it ourselves and did+} not [-a reproduction.-]{+reproduce that work.+}
+
+[-Because-]{+Cross-dataset studies of network intrusion detection report large drops when a model is tested on a dataset it was not trained on \cite{dhooge2023,layeghy2022}, including macro-F1 losses of up to 30 points for federated models moved between Edge-IIoTset, CICIoT2023, and TII-SSRC-23 \cite{bilal2026}. We add a wireless sensor network dataset and compare+} each {+RF transfer score with the target's majority-class share.+}
+
+{+Each+} network intrusion detection dataset ships with its own feature set, {+which makes+} models[-are-] hard to compare across [-datasets;-]{+datasets.+} Sarhan et al.\ address this by re-expressing datasets in a common NetFlow-based feature set \cite{sarhan2021}. Our behavioral track (Section~\ref{sec:features}) [-addresses the same obstacle by-]{+is+} a cruder [-route, hand-mapping-]{+approach that maps+} feature [-slots,-]{+slots by hand,+} and [-should be read-]{+it has not been validated+} as[-an experimental device rather than-] a[-validated-] common representation. Domain adaptation theory bounds target error by source error plus a domain divergence \cite{bendavid2010}, and {+Pan and Yang survey+} transfer learning[-is surveyed in-] \cite{pan2010}. DANN connects a domain classifier to a shared feature extractor through a gradient reversal layer, [-pushing-]{+so training pushes+} the extractor toward domain-invariant features \cite{ganin2015,ganin2016}. [-It was-]{+Ganin et al.\+} formulated {+it+} for labeled source {+data+} and unlabeled target data [-\cite{ganin2016}; our-]{+\cite{ganin2016}. Our+} DANN experiment [-differs-]{+uses labels+} from [-that setting-]{+both domains+} (Section~\ref{sec:protocol}).
+
+\section{Datasets and Label Mapping}\label{sec:data}
+We obtained the three datasets as tabular copies from [-the Kaggle platform.-]{+Kaggle.+} The WSN-DS and CICIoT2023 listings are not under the original authors' names, and we did not verify their contents against the original releases. The archived loader draws a class-stratified sample of about 200{,}000 records per dataset (at least 200 per class, the rest in proportion to class [-frequency);-]{+frequency). For CICIoT2023 and Edge-IIoTset,+} the saved baseline test sets (Table~\ref{tab:datasets}) [-are consistent with-]{+fit+} this [-cap for CICIoT2023 and Edge-IIoTset-]{+cap,+} but [-show-]{+the WSN-DS test set shows+} that WSN-DS was used in full. [-Each dataset is-]{+We+} split {+each dataset+} 70/10/20 into training, validation, and test partitions, stratified by [-class;-]{+class, and+} the archived code uses seed 42 for sampling and splitting.
+
+\begin{table}[t]
+\caption{Baseline Test Sets (20\% Stratified Split)}
+\label{tab:datasets}
+\centering
+\footnotesize
+[-\setlength{\tabcolsep}{3pt}-]
+[-\begin{tabular}{@{}llcc@{}}-]
+[-\toprule-]{+\setlength{\tabcolsep}{5pt}+}
+{+\begin{tabular}{|l|l|c|c|}+}
+{+\hline+}
+\textbf{Dataset} & \textbf{Classes} & \textbf{Test size: class counts} & \textbf{Majority} \\
+[-\midrule-]{+\hline+}
+WSN-DS & 0,1,2,3 & 74{,}933: 68{,}014/1{,}328/4{,}929/662 & 90.8\% \\
+{+\hline+}
+CICIoT2023 & 0,2,3,4 & 39{,}997: 934/421/38{,}307/335 & 95.8\% \\
+{+\hline+}
+Edge-IIoTset & 0,2,3,4 & 39{,}999: 29{,}121/22/6{,}092/4{,}764 & 72.8\% \\
+[-\bottomrule-]{+\hline+}
+{+\multicolumn{4}{p{231pt}}{Counts follow the class order and come from the saved baseline confusion matrices. Majority: share of the largest class. The composition of the hybrid and DANN test sets was not saved.}+}
+\end{tabular}
+
+[-\vspace{2pt}-]
+[-\parbox{0.95\columnwidth}{\footnotesize Counts follow the class order and come from the saved baseline confusion matrices. Majority: share of the largest class. The composition of the hybrid and DANN test sets was not saved.}-]
+\end{table}
+
+[-Raw-]{+We map raw+} labels[-are mapped-] to a five-class project taxonomy [-(Table~\ref{tab:labels});-]{+(Table~\ref{tab:labels}) and discard+} records [-with unmapped labels are discarded. The taxonomy-]{+whose label+} is [-a judgment-based alignment that we-]{+not in the mapping. We built the taxonomy by judgment and+} did not [-validate.-]{+validate it.+} Class~1 (``Jamming'') holds only WSN-DS time-division multiple access (TDMA) scheduling attacks and [-is absent from-]{+does not occur in+} the other datasets. Class~2 (``Spoofing'') [-combines-]{+puts+} blackhole and grayhole routing misbehavior in WSN-DS {+together+} with ARP [-and-]{+spoofing,+} DNS [-spoofing-]{+spoofing,+} and man-in-the-middle traffic in the other [-two, which-]{+two. These+} are different [-mechanisms observed-]{+mechanisms, and the datasets observe them+} through different features. [-The training-]{+Since the+} label sets [-therefore differ across datasets, and-]{+differ,+} cross-dataset scoring must decide [-how-]{+what+} to [-treat classes missing from-]{+do with a class that only+} one side {+has+} (Section~\ref{sec:protocol}).
+
+\begin{table*}[t]
+\caption{Label Mapping From Dataset Attack Labels to the Five-Class Taxonomy}
+\label{tab:labels}
+\centering
+\footnotesize
+[-\setlength{\tabcolsep}{4pt}-]
+[-\begin{tabular}{@{}L{2.3cm}L{2.5cm}L{6.1cm}L{5.4cm}@{}}-]
+[-\toprule-]{+\setlength{\tabcolsep}{5pt}+}
+{+\begin{tabular}{|L{2.3cm}|L{2.5cm}|L{6.1cm}|L{5.4cm}|}+}
+{+\hline+}
+\textbf{Class} & \textbf{WSN-DS} & \textbf{CICIoT2023} & \textbf{Edge-IIoTset} \\
+[-\midrule-]{+\hline+}
+0 Normal & Normal & BenignTraffic & Normal \\
+{+\hline+}
+1 Jamming$^{\mathrm{a}}$ & TDMA & -- & -- \\
+{+\hline+}
+2 Spoofing & Blackhole, Grayhole & MITM-ArpSpoofing, DNS\_Spoofing & MITM \\
+{+\hline+}
+3 DoS\_Flood & Flooding & 19 labels: DDoS-*, DoS-*, and Mirai flood variants (e.g., DDoS-SYN\_Flood, DoS-UDP\_Flood, Mirai-udpplain) & DDoS\_UDP, DDoS\_ICMP, DDoS\_TCP, DDoS\_HTTP \\
+{+\hline+}
+4 Intrusion\_Probe & -- & 12 labels: Recon-* (four), VulnerabilityScan, CommandInjection, SqlInjection, XSS, BrowserHijacking, Backdoor\_Malware, DictionaryBruteForce, Uploading\_Attack & SQL\_injection, Password, Vulnerability\_scanner, Uploading, Backdoor, Port\_Scanning, XSS, Ransomware, Fingerprinting \\
+[-\bottomrule-]{+\hline+}
+{+\multicolumn{4}{p{\dimexpr16.3cm+6\tabcolsep\relax}}{$^{\mathrm{a}}$The class keeps the name used in the project taxonomy although it contains only scheduling attacks. A dash means the dataset has no records mapped to that class.}+}
+\end{tabular}
+
+[-\vspace{2pt}-]
+[-\parbox{0.96\textwidth}{\footnotesize $^{\mathrm{a}}$The class keeps the name used in the project taxonomy although it contains only scheduling attacks. A dash means the dataset has no records mapped to that class.}-]
+\end{table*}
+
+\section{Methods}\label{sec:methods}
+\subsection{Feature Tracks and Preprocessing}\label{sec:features}
+The[-\emph{native track} is used for same-dataset evaluation: for WSN-DS and CICIoT2023 it is the same 20 columns as the behavioral track, and for Edge-IIoTset it is 35 raw protocol fields (e.g., TCP flags, sequence and acknowledgement values, and DNS, MQTT, and Modbus fields) chosen by the authors for class discrimination. The-] \emph{behavioral track} defines 20 named slots (volume, rate, send/receive ratio, acknowledgement ratio, and so on) and fills each {+one+} with a hand-written expression over each dataset's own columns. [-The-]{+Only the+} slot names are [-shared but the quantities are not (Table~\ref{tab:slots}):-]{+shared. As Table~\ref{tab:slots} shows,+} the ``energy'' slot holds expended energy in WSN-DS, total packet size in CICIoT2023, and a UDP stream index in Edge-IIoTset. [-The track gives-]{+Same-dataset evaluation uses+} a [-common input format, not a common meaning.-]{+\emph{native track}. For WSN-DS and CICIoT2023 it has the same 20 columns as the behavioral track. For Edge-IIoTset it has 35 raw protocol fields (e.g., TCP flags, sequence and acknowledgement values, and DNS, MQTT, and Modbus fields) that we chose for class discrimination.+}
+
+\begin{table*}[t]
+\caption{Examples of Behavioral Feature Slot Definitions per Dataset}
+\label{tab:slots}
+\centering
+\footnotesize
+[-\setlength{\tabcolsep}{4pt}-]
+[-\begin{tabular}{@{}L{2.0cm}L{5.0cm}L{3.4cm}L{5.4cm}@{}}-]
+[-\toprule-]{+\setlength{\tabcolsep}{5pt}+}
+{+\begin{tabular}{|L{2.0cm}|L{5.0cm}|L{3.4cm}|L{5.4cm}|}+}
+{+\hline+}
+\textbf{Slot} & \textbf{WSN-DS} & \textbf{CICIoT2023} & \textbf{Edge-IIoTset} \\
+[-\midrule-]{+\hline+}
+volume & \texttt{DATA\_S}+\texttt{DATA\_R} & \texttt{Tot sum} & \texttt{tcp.len}+\texttt{mqtt.len} \\
+{+\hline+}
+ack ratio & \texttt{ADV\_R}/(\texttt{ADV\_S}+1) & \texttt{ack\_count}/\texttt{Number} & \texttt{tcp.flags.ack} \\
+{+\hline+}
+energy & \texttt{Expaned Energy} & \texttt{Tot size} & \texttt{udp.stream} \\
+{+\hline+}
+port entropy & \texttt{Rank}/(max \texttt{Rank}+1) & \texttt{Covariance} & $|$\texttt{tcp.srcport}$-$\texttt{tcp.dstport}$|$/(sum+1) \\
+{+\hline+}
+mqtt activity & constant 0 & \texttt{DNS}+\texttt{DHCP}+\texttt{ARP} & \texttt{mqtt.len}+\texttt{mqtt.ver} \\
+[-\bottomrule-]{+\hline+}
+{+\multicolumn{4}{p{\dimexpr15.8cm+6\tabcolsep\relax}}{Entries are the dataset column names used in the slot expressions; spellings follow the datasets.}+}
+\end{tabular}
+
+[-\vspace{2pt}-]
+[-\parbox{0.96\textwidth}{\footnotesize Entries are the dataset column names used in the slot expressions; spellings follow the datasets.}-]
+\end{table*}
+
+Fig.~\ref{fig:pipeline} summarizes preprocessing. [-Each-]{+We pass each+} value[-is passed-] through a signed logarithm,
+\begin{equation}
+\tilde{x} = \operatorname{sign}(x)\,\log\!\bigl(1+|x|\bigr),
+\label{eq:log}
+\end{equation}
+and [-clipped-]{+clip it+} to [-$[-50,50]$; both-]{+$[-50,50]$. Both steps+} act on single values, so applying them before the split leaks no information. After the stratified split, the RF and XGBoost runs apply the synthetic minority oversampling technique (SMOTE) \cite{chawla2002} to the training partition. [-A-]{+We then fit a+} robust scaler[-is then fitted-] on the training partition (after oversampling, for the baselines) and [-applied-]{+apply it+} to all [-partitions; every dataset is preprocessed independently with its own scaler.-]{+partitions, separately for each dataset.+} For the deep models, {+we cut+} each partition [-is converted to-]{+into+} windows of $T=5$ consecutive rows [-labeled-]{+and label each window+} by [-their-]{+its+} last row. [-Because the-]{+The+} split shuffles rows, [-consecutive-]{+so the+} rows in a window are [-generally-]{+usually+} not adjacent in the original capture.
+
+\begin{figure}[t]
+\centering
+@@ -158,69 +191,72 @@ and clipped to $[-50,50]$; both act on single values, so applying them before th
+\draw[arr] (rows) -- (ev1);
+\draw[arr] (win) -- (ev2);
+\end{tikzpicture}
+\caption{Experimental pipeline. The baselines and deep models share[-labels, feature tracks, and-] the [-log transform,-]{+first three stages+} and differ [-in input form, class balancing, and evaluation-]{+after the split+} (Table~\ref{tab:protocol}). Each dataset is scaled with its own robust scaler.}
+\label{fig:pipeline}
+\end{figure}
+
+\subsection{Models}\label{sec:models}
+\subsubsection{Baselines} RF \cite{breiman2001} is a [-strong, nearly tuning-free-]{+strong+} baseline for tabular [-data; we-]{+data that needs little tuning. We+} use the scikit-learn implementation \cite{pedregosa2011} with 100 trees, a fixed random seed, and[-otherwise-] default [-settings.-]{+settings otherwise. We include+} XGBoost \cite{chen2016} [-tests-]{+to see+} whether gradient boosting [-changes the picture relative to-]{+behaves differently from+} bagged [-trees; it-]{+trees. It+} uses 100 trees, maximum depth 6, learning rate 0.1, and a multiclass softmax-probability objective.[-\subsubsection{Hybrid CNN--BiLSTM--attention} This model represents the convolutional--recurrent--attention family \cite{phalaagae2025} and tests whether a learned representation behaves differently from trees under transfer. Two one-dimensional convolutions (kernel 3, 32 then 64 channels, batch normalization, ReLU, dropout 0.2) feed a two-layer bidirectional LSTM with 128 units per direction and dropout 0.3 between layers. A single-head self-attention layer \cite{vaswani2017}, $\operatorname{softmax}(QK^{\top}/\sqrt{256})\,V$ with $Q$, $K$, and $V$ learned linear projections of the 256-dimensional outputs, is followed by averaging over the five time steps and a head $256\to128\to C$ (ReLU, dropout 0.3), where $C$ is the number of classes in the training data. Training uses AdamW \cite{loshchilov2019} (learning rate $10^{-3}$, weight decay $10^{-4}$), batch size 256, at most 20 epochs, learning-rate halving after three epochs without validation improvement, and early stopping with patience 7 on validation loss. The loss is cross-entropy with class weights $w_c=\min\{5,\max\{0.5,\,N/(C\,n_c)\}\}$, where $n_c$ is the number of training windows of class $c$ and $N$ the total.-]
+
+[-\subsubsection{DANN} DANN \cite{ganin2016} is the standard method for learning features that do not discriminate between domains, the property a cross-dataset detector needs. It reuses-]{+\subsubsection{Hybrid CNN-BiLSTM-attention} This model, our own configuration of+} the hybrid [-encoder, whose 256-dimensional output feeds a threat head and, through-]{+family in \cite{phalaagae2025}, tests whether+} a [-gradient reversal layer,-]{+learned representation transfers differently from trees. Two one-dimensional convolutions (kernel 3, 32 then 64 channels, batch normalization, ReLU, dropout 0.2) feed+} a [-domain head ($256\to128\to2$). The loss is $\mathcal{L}_{\mathrm{threat}}+\lambda\,\mathcal{L}_{\mathrm{domain}}$-]{+two-layer bidirectional LSTM+} with [-$\lambda=0.1$,-]{+128 units per direction and dropout 0.3 between layers. Next come+} a [-class-weighted threat loss,-]{+single-head self-attention layer \cite{vaswani2017}, $\operatorname{softmax}(QK^{\top}/\sqrt{256})\,V$ with $Q$, $K$,+} and {+$V$ learned linear projections of the 256-dimensional outputs,+} an [-unweighted domain loss. The reversal strength is $\alpha(p)=2/(1+e^{-5p})-1$,-]{+average over the five time steps, and a head $256\to128\to C$ (ReLU, dropout 0.3),+} where [-$p$-]{+$C$+} is the [-fraction-]{+number+} of [-adversarial epochs completed, so $\alpha$ reaches about 0.98-]{+classes+} in the [-last one. Eight threat-only epochs precede up to 25 adversarial epochs, with the hybrid's optimizer-]{+training data. Training uses AdamW \cite{loshchilov2019} (learning rate $10^{-3}$, weight decay $10^{-4}$), batch size 256,+} and [-schedule-]{+at most 20 epochs. The learning rate halves after three epochs without validation improvement,+} and early stopping [-with-]{+has+} patience 7 on[-the-] validation [-value-]{+loss. The loss is cross-entropy with class weights $w_c=\min\{5,\max\{0.5,\,N/(C\,n_c)\}\}$, where $n_c$ is the number+} of {+training windows of class $c$ and $N$+} the [-combined loss.-]{+total.+}
+
+[-\subsection{Evaluation Protocols}\label{sec:protocol}-]
+[-\emph{Same-dataset:} each model is trained on-]{+\subsubsection{DANN} DANN \cite{ganin2016} trains features that do not reveal which domain+} a [-dataset's training partition and scored on its held-out test partition. \emph{Cross-dataset transfer:}-]{+sample came from,+} a [-model trained on-]{+property+} a [-source dataset is scored on-]{+cross-dataset detector would want. It reuses+} the [-test partition of-]{+hybrid encoder, whose 256-dimensional output feeds+} a [-target dataset, for all nine pairs; the target test set-]{+threat head and, through a gradient reversal layer, a domain head ($256\to128\to2$). The loss+} is [-scaled-]{+$\mathcal{L}_{\mathrm{threat}}+\lambda\,\mathcal{L}_{\mathrm{domain}}$+} with [-the target's own scaler. RF-]{+$\lambda=0.1$, a class-weighted threat loss, and an unweighted domain loss. The reversal strength is $\alpha(p)=2/(1+e^{-5p})-1$, where $p$+} is[-scored on-] the [-full target test set, so target samples-]{+fraction+} of [-classes the source never saw count as errors, whereas for the hybrid model the target test set is first restricted to classes present-]{+adversarial epochs completed, so $\alpha$ reaches about 0.98+} in the [-source dataset. The two protocols are not equivalent, and their accuracies should not be differenced directly. \emph{DANN:} trained on the pooled training partitions of CICIoT2023 and Edge-IIoTset, each already scaled with its own scaler, with threat labels for both domains,-]{+last one. Training runs eight threat-only epochs+} and [-scored on each dataset's own test partition.-]{+then up to 25 adversarial epochs.+} It [-is therefore not a held-out-domain transfer test and differs from the unlabeled-target formulation \cite{ganin2016}.-]
+
+[-\emph{Metrics:} all models report accuracy. RF and XGBoost also report weighted precision, recall, and F1, the false alarm rate (FAR,-]{+uses+} the [-fraction of Normal samples predicted as any attack class),-]{+hybrid's optimizer+} and [-confusion matrices, from which we derive macro-F1 and balanced accuracy (mean per-class recall). The hybrid model and DANN report accuracy and weighted F1, and the transfer matrices accuracy only. For calibration, one temperature is fitted-]{+schedule, with early stopping at patience 7+} on the {+combined+} validation [-partition by minimizing negative log-likelihood \cite{guo2017}, and expected calibration error (ECE) is computed over 15 bins on the test partition. Each configuration was run once; the saved deep-learning results do not record the model-initialization seed. Table~\ref{tab:protocol} summarizes the differences.-]{+loss.+}
+
+\begin{table*}[t]
+\caption{Protocol Differences Between Experiments}
+\label{tab:protocol}
+\centering
+\footnotesize
+[-\setlength{\tabcolsep}{4pt}-]
+[-\begin{tabular}{@{}L{2.2cm}L{3.6cm}L{3.4cm}L{3.4cm}L{3.4cm}@{}}-]
+[-\toprule-]{+\setlength{\tabcolsep}{5pt}+}
+{+\begin{tabular}{|L{2.2cm}|L{3.6cm}|L{3.4cm}|L{3.4cm}|L{3.4cm}|}+}
+{+\hline+}
+\textbf{Aspect} & \textbf{RF / XGBoost} & \textbf{Hybrid, same-dataset} & \textbf{Hybrid, transfer} & \textbf{DANN (CIC + Edge)} \\
+[-\midrule-]{+\hline+}
+Feature track & 20-slot schema$^{\mathrm{a}}$ & Native (20; 35 for Edge-IIoTset) & Behavioral (20 slots) & Behavioral (20 slots) \\
+{+\hline+}
+Edge-IIoTset file & Not recorded$^{\mathrm{a}}$ & ``ML'' selected file & ``DNN'' selected file & ``DNN'' selected file \\
+{+\hline+}
+Input; balancing & One row; SMOTE & 5-row window; class weights & 5-row window; class weights & 5-row window; class weights \\
+{+\hline+}
+Transfer scoring & Full target test set & Not applicable & Target restricted to source classes & Not a transfer test \\
+{+\hline+}
+Saved metrics & Accuracy, weighted P/R/F1, FAR, confusion matrix & Accuracy, weighted F1 & Accuracy & Accuracy, weighted F1 \\
+{+\hline+}
+Training & 100 trees (XGBoost: depth 6, rate 0.1) & $\le$20 epochs & $\le$20 epochs & 8 + $\le$25 epochs, $\lambda=0.1$ \\
+[-\bottomrule-]{+\hline+}
+{+\multicolumn{5}{p{\dimexpr16cm+8\tabcolsep\relax}}{$^{\mathrm{a}}$The saved baseline results record neither the feature schema nor the input file. The archived baseline script applies the 20-slot schema to every dataset but is not consistent with the archived Edge-IIoTset loader, so the schema and file behind the saved Edge-IIoTset baseline numbers cannot be confirmed.}+}
+\end{tabular}
+
+[-\vspace{2pt}-]
+[-\parbox{0.96\textwidth}{\footnotesize $^{\mathrm{a}}$The saved baseline results record neither the feature schema nor the input file. The archived baseline script applies the 20-slot schema to every dataset but is not consistent with the archived Edge-IIoTset loader, so the schema and file behind the saved Edge-IIoTset baseline numbers cannot be confirmed.}-]
+\end{table*}
+
+{+\subsection{Evaluation Protocols}\label{sec:protocol}+}
+{+\emph{Same-dataset:} we train each model on a dataset's training partition and score it on that dataset's held-out test partition. \emph{Cross-dataset transfer:} a model trained on a source dataset is scored on the test partition of a target dataset, for all nine pairs, and the target test set is scaled with the target's own scaler. RF is scored on the full target test set, so target samples from classes the source never saw count as errors. For the hybrid model, the target test set is first restricted to classes present in the source dataset. The two protocols differ, so their accuracies should not be differenced directly. \emph{DANN:} we train it on the pooled training partitions of CICIoT2023 and Edge-IIoTset (each scaled with its own scaler) with threat labels from both domains, and score it on each dataset's own test partition. This is not a held-out-domain transfer test, and unlike the original formulation \cite{ganin2016}, the target domain is labeled.+}
+
+{+\emph{Metrics:} we saved accuracy for every model. For RF and XGBoost we also saved weighted precision, recall, and F1, the false alarm rate (FAR, the fraction of Normal samples predicted as any attack class), and confusion matrices, from which we derive macro-F1 and balanced accuracy (mean per-class recall). For the hybrid model and DANN we saved accuracy and weighted F1, and for the transfer matrices only accuracy. To calibrate, we fit one temperature on the validation partition by minimizing negative log-likelihood \cite{guo2017} and compute expected calibration error (ECE) over 15 bins on the test partition. We ran each configuration once, and the saved deep-learning results do not record the model-initialization seed. Table~\ref{tab:protocol} summarizes the differences.+}
+
+\section{Experimental Results}\label{sec:results}
+\subsection{Same-Dataset Results}
+[-Table~\ref{tab:same} gives same-dataset accuracy and weighted F1.-]RF and XGBoost lead {+the native-track hybrid model+} on WSN-DS and [-CICIoT2023, about-]{+CICIoT2023 by+} 1.5 {+to 1.6+} points [-above the native-track hybrid model; on-]{+(Table~\ref{tab:same}). On+} Edge-IIoTset the native-track hybrid leads with 94.39\%, against 92.06\% for RF and 91.92\% for XGBoost. Weighted F1 follows the same [-ordering-]{+order+} wherever it was saved. DANN, trained on pooled CICIoT2023 and Edge-IIoTset data, scores 1.29 and 1.13 points below the per-dataset behavioral hybrid models, which use the same feature track and data files. [-A-]{+We also tried a+} three-domain DANN that added [-WSN-DS was attempted, and project-]{+WSN-DS. Project+} notes [-record that-]{+say+} it did not converge to a useful [-solution, but-]{+solution. We saved+} no metrics from that run [-were saved, so we-]{+and+} make no quantitative [-statement-]{+claim+} about it.
+
+\begin{table*}[t]
+\caption{Same-Dataset Test Accuracy and Weighted F1 (\%), Single Run}
+\label{tab:same}
+\centering
+\footnotesize
+[-\setlength{\tabcolsep}{4pt}-]
+[-\begin{tabular}{@{}lccccccccc@{}}-]
+[-\toprule-]{+\setlength{\tabcolsep}{5pt}+}
+{+\begin{tabular}{|l|c|c|c|c|c|c|c|c|c|}+}
+{+\hline+}
+ & [-\multicolumn{5}{c}{\textbf{Accuracy}}-]{+\multicolumn{5}{c|}{\textbf{Accuracy}}+} & [-\multicolumn{4}{c}{\textbf{Weighted-]{+\multicolumn{4}{c|}{\textbf{Weighted+} F1}} \\
+[-\cmidrule(lr){2-6}\cmidrule(l){7-10}-]{+\cline{2-10}+}
+\textbf{Dataset} & [-RF-]{+\textbf{\textit{RF}}+} & [-XGB-]{+\textbf{\textit{XGB}}+} & [-Hybrid (native)-]{+\textbf{\textit{Hybrid (native)}}+} & [-Hybrid (behav.)-]{+\textbf{\textit{Hybrid (behav.)}}+} & [-DANN-]{+\textbf{\textit{DANN}}+} & [-RF-]{+\textbf{\textit{RF}}+} & [-XGB-]{+\textbf{\textit{XGB}}+} & [-Hybrid (native)-]{+\textbf{\textit{Hybrid (native)}}+} & [-DANN-]{+\textbf{\textit{DANN}}+} \\
+[-\midrule-]{+\hline+}
+WSN-DS & 99.60 & 99.56 & 98.06 & 97.79 & -- & 99.60 & 99.57 & 98.15 & -- \\
+{+\hline+}
+CICIoT2023 & 99.42 & 99.44 & 97.80 & 97.79 & 96.50 & 99.42 & 99.44 & 97.59 & 96.03 \\
+{+\hline+}
+Edge-IIoTset & 92.06 & 91.92 & 94.39 & 97.42 & 96.29 & 94.25 & 94.01 & 94.65 & 96.32 \\
+[-\bottomrule-]{+\hline+}
+{+\multicolumn{10}{p{404pt}}{XGB: XGBoost. ``Hybrid (native)'' and ``Hybrid (behav.)'' use the native and behavioral tracks; weighted F1 for the latter was not saved. A dash means the model was not trained on that dataset. Feature schemas and data files differ across columns (Table~\ref{tab:protocol}).}+}
+\end{tabular}
+
+[-\vspace{2pt}-]
+[-\parbox{0.96\textwidth}{\footnotesize XGB: XGBoost. ``Hybrid (native)'' and ``Hybrid (behav.)'' use the native and behavioral tracks; weighted F1 for the latter was not saved. A dash means the model was not trained on that dataset. Feature schemas and data files differ across columns (Table~\ref{tab:protocol}).}-]
+\end{table*}
+
+\begin{table*}[t]
+@@ -232,31 +268,35 @@ Edge-IIoTset & 92.06 & 91.92 & 94.39 & 97.42 & 96.29 & 94.25 & 94.01 & 94.65 & 9
+\begin{minipage}[t]{0.47\textwidth}
+\centering
+\textbf{(a) Random Forest, full target test set}\\[2pt]
+[-\begin{tabular}{@{}lccc@{}}-]
+[-\toprule-]{+\begin{tabular}{|l|c|c|c|}+}
+{+\hline+}
+ & \textbf{WSN-DS} & \textbf{CICIoT2023} & \textbf{Edge-IIoTset} \\
+[-\midrule-]{+\hline+}
+WSN-DS & \textbf{99.60} & 0.18 & 11.94 \\
+{+\hline+}
+CICIoT2023 & 1.26 & \textbf{99.42} & 26.30 \\
+{+\hline+}
+Edge-IIoTset & 1.90 & 67.64 & \textbf{92.06} \\
+[-\midrule-]{+\hline+}
+Majority share & 90.8 & 95.8 & 72.8 \\
+[-\bottomrule-]{+\hline+}
+\end{tabular}
+\end{minipage}\hfill
+\begin{minipage}[t]{0.47\textwidth}
+\centering
+\textbf{(b) Hybrid, target restricted to source classes}\\[2pt]
+[-\begin{tabular}{@{}lccc@{}}-]
+[-\toprule-]{+\begin{tabular}{|l|c|c|c|}+}
+{+\hline+}
+ & \textbf{WSN-DS} & \textbf{CICIoT2023} & \textbf{Edge-IIoTset} \\
+[-\midrule-]{+\hline+}
+WSN-DS & \textbf{97.79} & 0.30 & 80.70 \\
+{+\hline+}
+CICIoT2023 & 0.99 & \textbf{97.79} & 15.40 \\
+{+\hline+}
+Edge-IIoTset & 26.96 & 61.77 & \textbf{97.42} \\
+[-\midrule-]{+\hline+}
+Majority share & [-\multicolumn{3}{c}{not-]{+\multicolumn{3}{c|}{not+} saved} \\
+[-\bottomrule-]{+\hline+}
+\end{tabular}
+\end{minipage}
+
+@@ -265,70 +305,68 @@ Majority share & \multicolumn{3}{c}{not saved} \\
+\end{table*}
+
+\subsection{Metrics Derived From Confusion Matrices}
+[-Confusion matrices were saved only for-]{+Only+} RF and XGBoost {+have saved confusion matrices+} (Table~\ref{tab:cm}). [-On WSN-DS both show-]{+Both reach+} macro-F1 near 97\% [-and-]{+on WSN-DS, with+} FAR below 0.4\%. On [-CICIoT2023,-]{+CICIoT2023 their+} accuracy is [-99.4\% but-]{+99.4\%, yet+} macro-F1 is {+only+} 88.3\% (RF) and 88.9\% [-(XGBoost)-]{+(XGBoost),+} and FAR is 8.24\% and 9.31\%. [-On Edge-IIoTset,-]{+Edge-IIoTset has the widest gap, with+} accuracy[-is-] above 91.9\% [-but-]{+and+} macro-F1 [-is-]{+of+} 65.9\% and 65.5\%. [-In the-]{+On Edge-IIoTset,+} RF [-confusion matrices (Fig.~\ref{fig:cm}),-]{+detects+} all 22[-Edge-IIoTset-] test samples of class~2[-are detected,-] but {+also assigns+} 2{,}298 of the 6{,}092 class~3 samples (37.7\%) [-are predicted as-]{+to+} class~2, [-giving-]{+so+} class~2 {+has+} a precision of [-0.9\%. On CICIoT2023, class~3-]{+0.9\% (Fig.~\ref{fig:cm}). RF's recall on CICIoT2023 is near 100\% for class~3, which+} makes up 95.8\% of the test [-set with recall near 100\%, while the smaller classes have recalls of-]{+set, and+} 91.8\%, 79.3\%, and [-82.1\%.-]{+82.1\% for the smaller classes.+}
+
+\begin{table}[t]
+\caption{Confusion-Matrix-Derived Metrics for the Baselines (\%)}
+\label{tab:cm}
+\centering
+\footnotesize
+[-\setlength{\tabcolsep}{3.2pt}-]
+[-\begin{tabular}{@{}llccccc@{}}-]
+[-\toprule-]{+\setlength{\tabcolsep}{4pt}+}
+{+\begin{tabular}{|l|l|c|c|c|c|c|}+}
+{+\hline+}
+\textbf{Model} & \textbf{Dataset} & \textbf{Acc.} & \textbf{W-F1} & \textbf{Macro-F1}$^{\mathrm{a}}$ & \textbf{Bal. acc.}$^{\mathrm{a}}$ & \textbf{FAR} \\
+[-\midrule-]{+\hline+}
+RF & WSN-DS & 99.60 & 99.60 & 97.02 & 98.02 & 0.29 \\
+{+\hline+}
+RF & CICIoT2023 & 99.42 & 99.42 & 88.26 & 88.29 & 8.24 \\
+{+\hline+}
+RF & Edge-IIoTset & 92.06 & 94.25 & 65.93 & 87.10 & 0.59 \\
+{+\hline+}
+XGB & WSN-DS & 99.56 & 99.57 & 97.09 & 98.06 & 0.33 \\
+{+\hline+}
+XGB & CICIoT2023 & 99.44 & 99.44 & 88.86 & 89.42 & 9.31 \\
+{+\hline+}
+XGB & Edge-IIoTset & 91.92 & 94.01 & 65.51 & 86.93 & 0.58 \\
+[-\bottomrule-]{+\hline+}
+{+\multicolumn{7}{p{237pt}}{$^{\mathrm{a}}$Derived from the saved confusion matrices. W-F1: weighted F1; XGB: XGBoost.}+}
+\end{tabular}
+
+[-\vspace{2pt}-]
+[-\parbox{0.95\columnwidth}{\footnotesize $^{\mathrm{a}}$Derived from the saved confusion matrices. W-F1: weighted F1; XGB: XGBoost.}-]
+\end{table}
+
+\begin{figure*}[t]
+\centering
+[-\includegraphics[width=\textwidth]{fig_rf_cm.pdf}-]{+\includegraphics[width=0.92\textwidth]{fig_rf_cm.pdf}+}
+\caption{Row-normalized confusion matrices of the Random Forest baseline on the held-out test sets: row percentage with the sample count in parentheses. Class identifiers follow Table~\ref{tab:labels}.}
+\label{fig:cm}
+\end{figure*}
+
+\subsection{Cross-Dataset Transfer}
+[-Table~\ref{tab:transfer} gives-]{+Off the diagonal of+} the transfer [-matrices. Off-diagonal-]{+matrices (Table~\ref{tab:transfer}), RF+} accuracy ranges from 0.18\% to 67.64\%[-for RF-] and {+hybrid accuracy+} from 0.30\% to [-80.70\% for the hybrid model. Both-]{+80.70\%. Between WSN-DS and CICIoT2023 both+} models score below 2\%[-between WSN-DS and CICIoT2023-] in either [-direction, and the hybrid model scores 26.96\% from-]{+direction. From+} Edge-IIoTset to WSN-DS {+the hybrid model reaches 26.96\%,+} against 1.90\% for RF. Every off-diagonal RF accuracy is below the majority-class share of its target test set. The hybrid scores use masked targets: [-training-]{+a model trained+} on WSN-DS [-restricts the target to-]{+is tested only on+} classes 0, 2, and [-3; testing-]{+3, tests+} on WSN-DS [-removes class~1; CICIoT2023--Edge-IIoTset-]{+leave out class~1, and+} pairs [-are unmasked. The-]{+between CICIoT2023 and Edge-IIoTset need no mask. We did not save the+} composition of the masked test [-sets was not saved.-]{+sets.+}
+
+\subsection{Calibration}
+The fitted temperatures for the native-track hybrid models are 1.040 (WSN-DS), 1.495 (CICIoT2023), and 1.077 (Edge-IIoTset). Temperature scaling raised ECE on all [-three:-]{+three datasets, in the same order:+} from 1.70\% to 1.86\%, from 0.23\% to 0.43\%, and from 1.78\% to 2.04\%.
+
+\section{Discussion and Limitations}\label{sec:discussion}
+[-The following points interpret the results; they are not additional measurements.-]\subsection{Same-Dataset [-Scores Overstate Readiness}-]
+[-All-]{+Versus Cross-Dataset Accuracy}+}
+{+Every+} same-dataset [-results exceed-]{+result exceeds+} 91\% [-accuracy, while the-]{+accuracy. The+} largest off-diagonal entry is [-80.7\%-]{+80.7\%,+} and most are far [-lower, consistent with-]{+lower. This fits+} models [-relying-]{+that rely+} on signals specific to each dataset's capture process and feature [-definitions. The-]{+definitions, but our+} experiments cannot separate four contributors: genuine distribution shift,[-the differing meaning of-] behavioral slots {+that mean different things+} (Table~\ref{tab:slots}),[-the differing meaning of-] classes {+that mean different things+} (Table~\ref{tab:labels}), and classes missing from the source or target. The taxonomy itself is coarse and unvalidated.
+
+\subsection{Accuracy [-Is a Weak Guide on These Test Sets}-]
+[-With skewed-]{+Under Class Imbalance}+}
+{+The+} class [-distributions,-]{+distributions are skewed, so+} accuracy and macro-F1 [-diverge (for-]{+diverge: for+} RF, 99.4\% against 88.3\% on CICIoT2023 and 92.1\% against 65.9\% on [-Edge-IIoTset), and all-]{+Edge-IIoTset. All+} six RF transfer accuracies are below what a constant prediction of the largest class would achieve. For the hybrid model [-this comparison is impossible-]{+we cannot check this,+} because {+we did not save+} the masked test-set [-composition was not saved. If-]{+composition. Suppose+} the masked Edge-IIoTset subset in the WSN-DS-to-Edge-IIoTset test resembles the baseline split, where Normal makes up 29{,}121 of the 35{,}235 samples in classes 0, 2, and 3 [-(82.6\%),-]{+(82.6\%). Then+} the reported 80.7\% would be below always predicting Normal. [-This conditional observation is-]{+We did+} not [-a result, but-]{+measure this, so+} it [-shows why the headline-]{+is only a conditional observation, and without per-class results that+} transfer [-number-]{+score+} is not evidence of useful [-transfer without per-class results.-]{+transfer.+}
+
+[-\subsection{No Model Is Shown to Be Best}-]{+\subsection{Comparing Models}+}
+RF and XGBoost lead on WSN-DS and CICIoT2023 and are nearly indistinguishable. The native-track hybrid leads on Edge-IIoTset, [-but its-]{+yet it differs from the baselines in+} features, input file, and class balancing (class [-weights, not SMOTE) differ from the baselines'-]{+weights instead of SMOTE),+} and its macro-F1 is [-unavailable, so the-]{+unavailable. The+} 2.3-point gap {+therefore+} cannot be attributed to the architecture. [-The-]{+We chose the+} 35 native Edge-IIoTset fields[-were chosen-] without [-a recorded procedure;-]{+recording the procedure, and+} if labels from the full dataset informed the choice, that result may be optimistic. [-The-]{+In native mode the+} archived loader {+also+} reads the ``ML'' selected Edge-IIoTset [-file in native mode-]{+file,+} and {+in the other modes+} the ``DNN'' file[-otherwise-] \cite{ferrag2022}, so native and behavioral Edge-IIoTset results use different records. [-Transfer comparisons are confounded by-]{+In the transfer tests,+} class [-handling,-]{+handling confounds the comparison, and+} XGBoost and DANN have no transfer [-results, and scaling-]{+results. Scaling+} each target with its own scaler assumes unlabeled target data {+that+} a deployed detector may lack. [-Windows-]{+Finally, windows+} come from a shuffled split, so the recurrent and attention layers see no real temporal [-structure-]{+structure,+} and the results say nothing about temporal modeling.
+
+[-\subsection{DANN's Contribution Is Not Established}-]{+\subsection{What the DANN Results Show}+}
+DANN's 96.5\% and 96.3\% show that one model trained on pooled data [-scores in this range-]{+can nearly match per-dataset training+} on both [-datasets, at a small cost relative to per-dataset training, but not that-]{+datasets. Whether+} the adversarial term produced domain-invariant [-features. That-]{+features is untested. Testing it+} would [-require-]{+take+} a pooled control without gradient reversal trained for the same number of epochs, a held-out-domain test, and a record of domain-classifier [-accuracy;-]{+accuracy. We have+} none [-is available,-]{+of these. We also did not save+} the [-epoch count actually-]{+number of epochs+} run[-was not saved,-] and {+did not tune+} $\lambda$ [-and-]{+or+} the [-schedule were not tuned.-]{+schedule. Because+} DANN [-also used labeled data-]{+saw labels+} from both domains,[-so-] the result [-is not evidence for-]{+says nothing about+} the unsupervised-target setting it was designed for \cite{ganin2016}.
+
+\subsection{Calibration}
+Temperature scaling did not reduce [-ECE. The ECE-]{+ECE, but the unscaled+} values [-before scaling are-]{+were+} already small, {+and+} differences of a few tenths of a point from a single run are hard to [-interpret, and the-]{+interpret. The+} CICIoT2023 temperature (1.495) is {+also+} close to the optimizer's starting value of 1.5, so incomplete optimization cannot be ruled out.
+
+\subsection{Reproducibility and Scope}\label{sec:limits}
+Every number comes from a single run without variance estimates, so small differences (e.g., RF versus XGBoost) should not be treated as meaningful. The saved results [-were produced by-]{+came from+} earlier versions of the scripts than[-those archived:-] the archived {+ones. In the archived code, the+} loader caps WSN-DS at about 200{,}000 [-records-]{+records,+} whereas the saved WSN-DS test set implies the full [-dataset; the archived-]{+dataset. Its+} baseline script is inconsistent with [-the archived-]{+its+} Edge-IIoTset [-loader; the archived-]{+loader, and its+} deep-learning script writes seed and ROC fields that the saved results [-lack; and the WSN-DS hybrid result differs between-]{+lack. Although+} the native and behavioral {+WSN-DS hybrid+} runs[-(98.06\% against 97.79\%) although both-] use the same 20 [-columns.-]{+columns, their accuracies differ (98.06\% against 97.79\%).+} We could not confirm that the tables can be regenerated exactly from the archived code. [-The-]{+We did not save the+} areas under the receiver operating characteristic and [-precision--recall-]{+precision-recall+} curves (ROC-AUC and PR-AUC), deep-model confusion matrices and per-class metrics, [-and-]{+or+} cross-dataset [-F1 were not saved.-]{+F1.+} Project notes also mention an Edge-IIoTset run without the signed logarithm, but no result, code path, or configuration for it was saved, so we do not report it. [-Finally, nothing here tests-]{+The experiments use no+} live wireless or IoT [-traffic,-]{+traffic and measure neither+} detection [-latency, or-]{+latency nor+} mitigation.
+
+\section{Conclusion}\label{sec:conclusion}
+[-Across-]RF, XGBoost, a hybrid [-CNN--BiLSTM--attention-]{+CNN-BiLSTM-attention+} model, and DANN {+all reach 91.9\% to 99.6\% accuracy+} on {+held-out test sets from+} WSN-DS, CICIoT2023, and [-Edge-IIoTset, same-dataset accuracy is high (91.9--99.6\%), whereas accuracy-]{+Edge-IIoTset when trained on the same dataset. Accuracy+} on a different dataset is much [-lower and,-]{+lower, and+} for [-RF,-]{+RF it is+} always below the target's majority-class share. {+For these datasets a single same-dataset accuracy is not sufficient evidence, and a transfer claim needs matched scoring protocols, per-class metrics, and variance estimates.+} The baselines lead on WSN-DS and CICIoT2023, {+and+} the hybrid model {+leads+} on [-Edge-IIoTset, and pooled-]{+Edge-IIoTset. Pooled+} DANN scored [-1.1--1.3-]{+1.1 to 1.3+} points below the per-dataset behavioral hybrid [-models; differences in feature schemas, data files, and class handling, single runs, and the missing DANN control prevent us from declaring-]{+models. We do not name+} a best model or [-attributing-]{+attribute+} differences to architecture or adversarial [-training. The results support a narrower conclusion:-]{+training, because feature schemas, data files, and class handling differ, each result comes from+} a single [-same-dataset accuracy is insufficient evidence for these datasets,-]{+run,+} and [-transfer claims need matched scoring protocols, per-class metrics, and variance estimates.-]{+DANN has no control.+} Future work should [-use a-]{+extract+} common [-feature extraction-]{+features+} from raw captures \cite{sarhan2021}, [-identical scoring across models, repeated-]{+score all models the same way, repeat runs over several+} seeds, {+report+} ROC-AUC and PR-AUC, {+add+} a pooled control for DANN, and {+test on+} a genuinely held-out target domain.[-\section*{Acknowledgment}-]
+[-The authors thank the creators of WSN-DS, CICIoT2023, and Edge-IIoTset for making their datasets publicly available.-]
+
+\begin{thebibliography}{00}
+\bibitem{sommer2010} R. Sommer and V. Paxson, ``Outside the closed world: On using machine learning for network intrusion detection,'' in \emph{Proc. IEEE Symp. Secur. Privacy}, Oakland, CA, USA, 2010, pp. 305--316.
+@@ -344,6 +382,9 @@ The authors thank the creators of WSN-DS, CICIoT2023, and Edge-IIoTset for makin
+\bibitem{schuster1997} M. Schuster and K. K. Paliwal, ``Bidirectional recurrent neural networks,'' \emph{IEEE Trans. Signal Process.}, vol. 45, no. 11, pp. 2673--2681, Nov. 1997.
+\bibitem{vaswani2017} A. Vaswani \emph{et al.}, ``Attention is all you need,'' in \emph{Proc. Adv. Neural Inf. Process. Syst.}, vol. 30, 2017, pp. 5998--6008.
+\bibitem{phalaagae2025} P. Phalaagae, A. M. Zungeru, A. Yahya, B. Sigweni, and S. Rajalakshmi, ``A hybrid CNN-LSTM model with attention mechanism for improved intrusion detection in wireless IoT sensor networks,'' \emph{IEEE Access}, vol. 13, pp. 57322--57341, 2025, doi: 10.1109/ACCESS.2025.3555861.
+{+\bibitem{dhooge2023} L. D'hooge, M. Verkerken, T. Wauters, F. De Turck, and B. Volckaert, ``Investigating generalized performance of data-constrained supervised machine learning models on novel, related samples in intrusion detection,'' \emph{Sensors}, vol. 23, no. 4, Art. no. 1846, 2023, doi: 10.3390/s23041846.+}
+{+\bibitem{layeghy2022} S. Layeghy and M. Portmann, ``On generalisability of machine learning-based network intrusion detection systems,'' 2022, arXiv:2205.04112.+}
+{+\bibitem{bilal2026} M. A. Bilal, I. U. Islam, S. Idrees, M. Qasim, M. J. Khan, and J. Khan, ``Dataset-centric evaluation of federated intrusion detection models in IoT networks,'' \emph{Sci. Rep.}, vol. 16, Art. no. 2683, 2026, doi: 10.1038/s41598-025-32567-w.+}
+\bibitem{sarhan2021} M. Sarhan, S. Layeghy, N. Moustafa, and M. Portmann, ``NetFlow datasets for machine learning-based network intrusion detection systems,'' in \emph{Big Data Technologies and Applications and Wireless Internet (BDTA/WiCON)}. Springer, 2021, doi: 10.1007/978-3-030-72802-1\_9.
+\bibitem{bendavid2010} S. Ben-David, J. Blitzer, K. Crammer, A. Kulesza, F. Pereira, and J. W. Vaughan, ``A theory of learning from different domains,'' \emph{Mach. Learn.}, vol. 79, no. 1--2, pp. 151--175, 2010.
+\bibitem{pan2010} S. J. Pan and Q. Yang, ``A survey on transfer learning,'' \emph{IEEE Trans. Knowl. Data Eng.}, vol. 22, no. 10, pp. 1345--1359, Oct. 2010.

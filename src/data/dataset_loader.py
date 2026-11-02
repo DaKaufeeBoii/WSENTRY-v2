@@ -2,8 +2,21 @@
 W-SENTRY dataset loaders v3.
 Two-track: native features (best same-dataset) + behavioral features (cross-dataset).
 """
+import os
+from pathlib import Path
 import pandas as pd
 import numpy as np
+
+REPO_ROOT = Path(__file__).resolve().parent.parent.parent
+
+def _resolve_data_path(path: str) -> str:
+    """Resolve data path relative to CWD or repo root."""
+    if os.path.exists(path):
+        return path
+    candidate = REPO_ROOT / path
+    if candidate.exists():
+        return str(candidate)
+    return path
 
 THREAT_MAP = {0: "Normal", 1: "Jamming", 2: "Spoofing", 3: "DoS_Flood", 4: "Intrusion_Probe"}
 
@@ -83,6 +96,7 @@ def _stratified_sample(df, label_col, max_rows, min_per_class=200):
 # ===================== WSN-DS =====================
 
 def load_wsn(path="data/raw/WSN-DS.csv", max_rows=200000, mode="native"):
+    path = _resolve_data_path(path)
     df = pd.read_csv(path)
     df.columns = df.columns.str.strip()
     if max_rows:
@@ -130,6 +144,7 @@ def load_wsn(path="data/raw/WSN-DS.csv", max_rows=200000, mode="native"):
 # ===================== CIC-IoT =====================
 
 def load_cic(path="data/raw/IoT_Intrusion.csv", max_rows=200000, mode="native"):
+    path = _resolve_data_path(path)
     df = pd.read_csv(path)
     if max_rows:
         df = _stratified_sample(df, "label", max_rows, min_per_class=200)
@@ -171,6 +186,7 @@ def load_cic(path="data/raw/IoT_Intrusion.csv", max_rows=200000, mode="native"):
 
 def _load_edge_raw(path, max_rows):
     """Load and sample raw Edge-IIoT dataframe."""
+    path = _resolve_data_path(path)
     df = pd.read_csv(path, low_memory=False)
     df["Attack_type"] = df["Attack_type"].astype(str).str.strip()
     if max_rows:

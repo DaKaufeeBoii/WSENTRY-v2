@@ -6,7 +6,7 @@ import { useFeed, feed } from "../lib/mockFeed.js";
 import { C, THREAT } from "../lib/theme.js";
 
 const MODES = [
-  { id: "simulated", label: "Simulated" },
+  { id: "simulated", label: "Dry run" },
   { id: "windows", label: "Windows (netsh)" },
   { id: "wsl", label: "WSL (iptables)" },
 ];
@@ -30,7 +30,7 @@ export default function Mitigation() {
       <SectionHeader
         eyebrow="Firewall responses"
         title="Mitigation engine"
-        sub="Automated responses to classified threats, with a per-IP cooldown. Rule commands are generated for the selected platform but never executed — this is a simulated response log."
+        sub="Automated responses to classified threats, with a per-IP cooldown. Rule commands are generated for the selected platform and run in dry-run mode on this machine, so no firewall rules are applied."
       />
 
       <div className="flex flex-wrap items-center gap-3 mb-4">

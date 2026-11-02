@@ -1,0 +1,2 @@
+"""W-SENTRY Dashboard package."""
+

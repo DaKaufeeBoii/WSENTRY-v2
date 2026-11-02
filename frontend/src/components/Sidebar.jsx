@@ -49,7 +49,7 @@ export function Sidebar() {
       <div className="border-t border-edge p-4 text-[11.5px] text-faint">
         <div className="flex items-center gap-2 mb-1">
           <LiveDot running={feed.running} />
-          <span className="text-muted font-medium">{feed.running ? "Capture live" : "Capture paused"}</span>
+          <span className="text-muted font-medium">{feed.running ? "Monitor live" : "Monitor paused"}</span>
         </div>
         <div className="tnum">
           {feed.pps} pps · {feed.stats.total.toLocaleString()} pkts · {feed.stats.threats.toLocaleString()} threats

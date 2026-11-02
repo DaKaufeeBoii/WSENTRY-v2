@@ -1,0 +1,97 @@
+{
+  "datasets": [
+    "WSN",
+    "CIC",
+    "Edge"
+  ],
+  "max_rows_per_dataset": 40000,
+  "epochs_ran": 25,
+  "final_val_acc": 0.9411,
+  "accuracy": 0.946,
+  "macro_auc": 0.9907,
+  "ece": 0.0102,
+  "per_class": {
+    "Normal": {
+      "class_id": 0,
+      "precision": 0.952,
+      "recall": 0.9783,
+      "f1": 0.9649,
+      "support": 12740
+    },
+    "Jamming": {
+      "class_id": 1,
+      "precision": 0.9295,
+      "recall": 0.8146,
+      "f1": 0.8683,
+      "support": 178
+    },
+    "Spoofing": {
+      "class_id": 2,
+      "precision": 0.827,
+      "recall": 0.8081,
+      "f1": 0.8175,
+      "support": 787
+    },
+    "DoS_Flood": {
+      "class_id": 3,
+      "precision": 0.9696,
+      "recall": 0.9703,
+      "f1": 0.9699,
+      "support": 8512
+    },
+    "Intrusion_Probe": {
+      "class_id": 4,
+      "precision": 0.8022,
+      "recall": 0.6434,
+      "f1": 0.7141,
+      "support": 1607
+    }
+  },
+  "confusion_matrix": {
+    "labels": [
+      0,
+      1,
+      2,
+      3,
+      4
+    ],
+    "matrix": [
+      [
+        12463,
+        8,
+        97,
+        55,
+        117
+      ],
+      [
+        23,
+        145,
+        8,
+        2,
+        0
+      ],
+      [
+        43,
+        1,
+        636,
+        37,
+        70
+      ],
+      [
+        171,
+        2,
+        12,
+        8259,
+        68
+      ],
+      [
+        392,
+        0,
+        16,
+        165,
+        1034
+      ]
+    ]
+  },
+  "test_samples": 23824
+}

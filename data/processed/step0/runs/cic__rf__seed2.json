@@ -1,0 +1,162 @@
+{
+ "dataset": "cic",
+ "model": "rf",
+ "seed": 2,
+ "metrics": {
+  "n_test": 60000,
+  "accuracy": 0.9910333333333333,
+  "macro_f1": 0.8211498121403134,
+  "weighted_f1": 0.990867566021348,
+  "balanced_accuracy": 0.8108842412520414,
+  "majority_baseline": 0.9575666666666667,
+  "far": 0.0614406779661017,
+  "per_class": {
+   "0": {
+    "precision": 0.802536231884058,
+    "recall": 0.9385593220338984,
+    "f1": 0.865234375,
+    "support": 1416
+   },
+   "2": {
+    "precision": 0.7954545454545454,
+    "recall": 0.6698564593301436,
+    "f1": 0.7272727272727273,
+    "support": 627
+   },
+   "3": {
+    "precision": 0.9999651537590383,
+    "recall": 0.9989382810596303,
+    "f1": 0.9994514536478333,
+    "support": 57454
+   },
+   "4": {
+    "precision": 0.7600950118764845,
+    "recall": 0.6361829025844931,
+    "f1": 0.6926406926406926,
+    "support": 503
+   }
+  },
+  "classes": [
+   0,
+   2,
+   3,
+   4
+  ],
+  "confusion_matrix": [
+   [
+    1329,
+    49,
+    0,
+    38
+   ],
+   [
+    151,
+    420,
+    0,
+    56
+   ],
+   [
+    35,
+    19,
+    57393,
+    7
+   ],
+   [
+    141,
+    40,
+    2,
+    320
+   ]
+  ],
+  "roc_auc": 0.9969102267950369,
+  "pr_auc": 0.8855294134904339
+ },
+ "seconds": 4.8,
+ "n_rows": 300000,
+ "row_cap": 300000,
+ "data": "data/raw/ciciot2023_kaggle_csv/wataiData/csv/CICIoT2023/part-0000[0-9]-*.csv",
+ "features": [
+  "flow_duration",
+  "Header_Length",
+  "Protocol Type",
+  "Duration",
+  "Rate",
+  "Srate",
+  "Drate",
+  "fin_flag_number",
+  "syn_flag_number",
+  "rst_flag_number",
+  "psh_flag_number",
+  "ack_flag_number",
+  "ece_flag_number",
+  "cwr_flag_number",
+  "ack_count",
+  "syn_count",
+  "fin_count",
+  "urg_count",
+  "rst_count",
+  "HTTP",
+  "HTTPS",
+  "DNS",
+  "Telnet",
+  "SMTP",
+  "SSH",
+  "IRC",
+  "TCP",
+  "UDP",
+  "DHCP",
+  "ARP",
+  "ICMP",
+  "IPv",
+  "LLC",
+  "Tot sum",
+  "Min",
+  "Max",
+  "AVG",
+  "Std",
+  "Tot size",
+  "Number",
+  "Magnitue",
+  "Radius",
+  "Covariance",
+  "Variance",
+  "Weight"
+ ],
+ "config": {
+  "max_rows": {
+   "wsn": null,
+   "cic": 300000,
+   "edge": null
+  },
+  "sample_seed": 0,
+  "split": {
+   "train": 0.7,
+   "val": 0.1,
+   "test": 0.2
+  },
+  "transform": "sign(x)*log1p(|x|), clip [-50, 50], robust scaler fit on train",
+  "class_weight": "N/(C*n_c) clipped to [0.5, 5], same for all models; no SMOTE",
+  "time_steps": 5,
+  "rf": {
+   "n_estimators": 100
+  },
+  "xgb": {
+   "n_estimators": 100,
+   "max_depth": 6,
+   "learning_rate": 0.1
+  },
+  "hybrid": {
+   "epochs": 20,
+   "batch_size": 256,
+   "lr": 0.001
+  }
+ },
+ "device": "cuda",
+ "git_commit": "7bedc6a",
+ "versions": {
+  "sklearn": "1.9.1",
+  "xgboost": "3.2.0",
+  "torch": "2.11.0+cu128",
+  "numpy": "2.4.6"
+ }
+}

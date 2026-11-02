@@ -85,17 +85,20 @@ export default function LiveMonitor() {
           <div>
             <div className="text-[15px] font-semibold leading-tight">Live SOC Monitor</div>
             <div className="text-[12px] text-faint">
-              Simulated NIC capture · classified by the hybrid model{s.episode ? " · attack episode in progress" : ""}
+              {s.replay
+                ? `Held-out test traffic (WSN-DS · CIC-IoT-2023 · Edge-IIoTset) · classified by the hybrid model`
+                : "Demo stream · classified by the hybrid model"}
+              {s.episode ? " · attack episode in progress" : ""}
             </div>
           </div>
         </div>
         {s.running ? (
           <ControlBtn onClick={() => feed.stop()} tone="stop">
-            <Pause size={15} /> Stop capture
+            <Pause size={15} /> Stop
           </ControlBtn>
         ) : (
           <ControlBtn onClick={() => feed.start()} tone="live">
-            <Play size={15} /> Start capture
+            <Play size={15} /> Start
           </ControlBtn>
         )}
         <ControlBtn onClick={() => feed.reset()}>
@@ -116,7 +119,16 @@ export default function LiveMonitor() {
         </div>
         <StatTile label="Packets / sec" value={s.pps} sub="current tick" color={C.accent} />
         <StatTile label="Threats detected" value={s.stats.threats.toLocaleString()} sub="session total" color={C.bad} />
-        <StatTile label="Total packets" value={s.stats.total.toLocaleString()} sub="session total" />
+        {s.replay ? (
+          <StatTile
+            label="Model accuracy"
+            value={s.stats.inspected ? `${((s.stats.correct / s.stats.inspected) * 100).toFixed(1)}%` : "—"}
+            sub={`vs ground truth · ${s.stats.inspected.toLocaleString()} records`}
+            color={C.good}
+          />
+        ) : (
+          <StatTile label="Total packets" value={s.stats.total.toLocaleString()} sub="session total" />
+        )}
       </div>
 
       <Card title="Packet rate" note="packets/sec with threats highlighted" className="mb-4">
@@ -143,7 +155,7 @@ export default function LiveMonitor() {
             <table className="w-full text-[12.5px]">
               <thead className="sticky top-0 bg-surface z-10">
                 <tr className="text-faint text-[11px] uppercase tracking-wide">
-                  {["Time", "Source", "Dest", "Proto", "Class", "Conf", "Action"].map((h) => (
+                  {["Time", "Source", "Dest", s.replay ? "Origin" : "Proto", "Class", s.replay ? "Truth" : null, "Conf", "Action"].filter(Boolean).map((h) => (
                     <th key={h} className="text-left font-semibold px-3 py-2.5 border-b border-edge whitespace-nowrap">
                       {h}
                     </th>
@@ -159,9 +171,20 @@ export default function LiveMonitor() {
                       <td className="px-3 py-2 tnum font-mono whitespace-nowrap">{p.src}</td>
                       <td className="px-3 py-2 tnum font-mono text-muted whitespace-nowrap">{p.dst}</td>
                       <td className="px-3 py-2 text-muted">{p.proto}</td>
-                      <td className="px-3 py-2">
-                        <ThreatBadge cls={p.cls} />
+                      <td className="px-3 py-2 whitespace-nowrap">
+                        {p.state ? (
+                          <span className="text-[11px] text-faint">{p.state === "dropped" ? "firewall drop" : "not inspected"}</span>
+                        ) : (
+                          <ThreatBadge cls={p.cls} />
+                        )}
                       </td>
+                      {p.truth !== undefined && p.state && <td className="px-3 py-2 text-faint">—</td>}
+                      {p.truth !== undefined && !p.state && (
+                        <td className="px-3 py-2 whitespace-nowrap text-[11.5px]" style={{ color: p.truth === p.cls ? C.good : C.bad }}>
+                          {p.truth === p.cls ? "✓ " : "✗ "}
+                          {THREAT[p.truth].label}
+                        </td>
+                      )}
                       <td className="px-3 py-2 w-24">
                         <div className="flex items-center gap-2">
                           <span className="tnum text-[11.5px] w-9">{(p.confidence * 100).toFixed(0)}%</span>

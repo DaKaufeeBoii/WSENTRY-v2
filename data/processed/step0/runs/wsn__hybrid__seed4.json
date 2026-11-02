@@ -1,0 +1,133 @@
+{
+ "dataset": "wsn",
+ "model": "hybrid",
+ "seed": 4,
+ "metrics": {
+  "n_test": 74933,
+  "accuracy": 0.9959697329614455,
+  "macro_f1": 0.9719534983902608,
+  "weighted_f1": 0.9959952652389602,
+  "balanced_accuracy": 0.9844374467006998,
+  "majority_baseline": 0.9076641800008007,
+  "far": 0.0032493310200841004,
+  "per_class": {
+   "0": {
+    "precision": 0.9989096320744987,
+    "recall": 0.9967506689799159,
+    "f1": 0.9978289827128148,
+    "support": 68014
+   },
+   "1": {
+    "precision": 0.9773790951638065,
+    "recall": 0.9435240963855421,
+    "f1": 0.9601532567049809,
+    "support": 1328
+   },
+   "2": {
+    "precision": 0.9764029347610549,
+    "recall": 0.9989855954554676,
+    "f1": 0.9875651825110309,
+    "support": 4929
+   },
+   "3": {
+    "precision": 0.8920377867746289,
+    "recall": 0.9984894259818731,
+    "f1": 0.9422665716322167,
+    "support": 662
+   }
+  },
+  "classes": [
+   0,
+   1,
+   2,
+   3
+  ],
+  "confusion_matrix": [
+   [
+    67793,
+    26,
+    115,
+    80
+   ],
+   [
+    71,
+    1253,
+    4,
+    0
+   ],
+   [
+    2,
+    3,
+    4924,
+    0
+   ],
+   [
+    1,
+    0,
+    0,
+    661
+   ]
+  ],
+  "roc_auc": 0.9956849583933292,
+  "pr_auc": 0.9755218115258921
+ },
+ "seconds": 271.7,
+ "n_rows": 374661,
+ "row_cap": null,
+ "data": "data/raw/WSN-DS.csv",
+ "features": [
+  "Time",
+  "Is_CH",
+  "Dist_To_CH",
+  "ADV_S",
+  "ADV_R",
+  "JOIN_S",
+  "JOIN_R",
+  "SCH_S",
+  "SCH_R",
+  "Rank",
+  "DATA_S",
+  "DATA_R",
+  "Data_Sent_To_BS",
+  "dist_CH_To_BS",
+  "send_code",
+  "Expaned Energy"
+ ],
+ "config": {
+  "max_rows": {
+   "wsn": null,
+   "cic": 300000,
+   "edge": null
+  },
+  "sample_seed": 0,
+  "split": {
+   "train": 0.7,
+   "val": 0.1,
+   "test": 0.2
+  },
+  "transform": "sign(x)*log1p(|x|), clip [-50, 50], robust scaler fit on train",
+  "class_weight": "N/(C*n_c) clipped to [0.5, 5], same for all models; no SMOTE",
+  "time_steps": 5,
+  "rf": {
+   "n_estimators": 100
+  },
+  "xgb": {
+   "n_estimators": 100,
+   "max_depth": 6,
+   "learning_rate": 0.1
+  },
+  "hybrid": {
+   "epochs": 20,
+   "batch_size": 256,
+   "lr": 0.001
+  }
+ },
+ "device": "cuda",
+ "git_commit": "7bedc6a",
+ "versions": {
+  "sklearn": "1.9.1",
+  "xgboost": "3.2.0",
+  "torch": "2.11.0+cu128",
+  "numpy": "2.4.6"
+ }
+}

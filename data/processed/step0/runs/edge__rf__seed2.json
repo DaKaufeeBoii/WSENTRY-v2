@@ -1,0 +1,158 @@
+{
+ "dataset": "edge",
+ "model": "rf",
+ "seed": 2,
+ "metrics": {
+  "n_test": 31560,
+  "accuracy": 0.9509505703422053,
+  "macro_f1": 0.8394774354865131,
+  "weighted_f1": 0.9499361165854034,
+  "balanced_accuracy": 0.8029746603993169,
+  "majority_baseline": 0.5252851711026616,
+  "far": 0.012757201646090535,
+  "per_class": {
+   "0": {
+    "precision": 0.9767915309446255,
+    "recall": 0.9872427983539095,
+    "f1": 0.9819893573475236,
+    "support": 4860
+   },
+   "2": {
+    "precision": 1.0,
+    "recall": 0.32098765432098764,
+    "f1": 0.48598130841121495,
+    "support": 243
+   },
+   "3": {
+    "precision": 0.9062380405663988,
+    "recall": 0.9588014981273408,
+    "f1": 0.9317790566130539,
+    "support": 9879
+   },
+   "4": {
+    "precision": 0.9718327335897754,
+    "recall": 0.9448666907950296,
+    "f1": 0.9581600195742599,
+    "support": 16578
+   }
+  },
+  "classes": [
+   0,
+   2,
+   3,
+   4
+  ],
+  "confusion_matrix": [
+   [
+    4798,
+    0,
+    11,
+    51
+   ],
+   [
+    0,
+    78,
+    165,
+    0
+   ],
+   [
+    4,
+    0,
+    9472,
+    403
+   ],
+   [
+    110,
+    0,
+    804,
+    15664
+   ]
+  ],
+  "roc_auc": 0.9864509659619993,
+  "pr_auc": 0.8317571083282789
+ },
+ "seconds": 2.0,
+ "n_rows": 157800,
+ "row_cap": null,
+ "data": "data/raw/ML-EdgeIIoT-dataset.csv",
+ "features": [
+  "arp.opcode",
+  "arp.hw.size",
+  "icmp.checksum",
+  "icmp.seq_le",
+  "icmp.unused",
+  "http.content_length",
+  "http.response",
+  "http.tls_port",
+  "tcp.ack",
+  "tcp.ack_raw",
+  "tcp.checksum",
+  "tcp.connection.fin",
+  "tcp.connection.rst",
+  "tcp.connection.syn",
+  "tcp.connection.synack",
+  "tcp.dstport",
+  "tcp.flags",
+  "tcp.flags.ack",
+  "tcp.len",
+  "tcp.seq",
+  "udp.port",
+  "udp.time_delta",
+  "dns.qry.name",
+  "dns.qry.name.len",
+  "dns.qry.qu",
+  "dns.qry.type",
+  "dns.retransmission",
+  "dns.retransmit_request",
+  "dns.retransmit_request_in",
+  "mqtt.conflag.cleansess",
+  "mqtt.conflags",
+  "mqtt.hdrflags",
+  "mqtt.len",
+  "mqtt.msg_decoded_as",
+  "mqtt.msgtype",
+  "mqtt.proto_len",
+  "mqtt.topic_len",
+  "mqtt.ver",
+  "mbtcp.len",
+  "mbtcp.trans_id",
+  "mbtcp.unit_id"
+ ],
+ "config": {
+  "max_rows": {
+   "wsn": null,
+   "cic": 300000,
+   "edge": null
+  },
+  "sample_seed": 0,
+  "split": {
+   "train": 0.7,
+   "val": 0.1,
+   "test": 0.2
+  },
+  "transform": "sign(x)*log1p(|x|), clip [-50, 50], robust scaler fit on train",
+  "class_weight": "N/(C*n_c) clipped to [0.5, 5], same for all models; no SMOTE",
+  "time_steps": 5,
+  "rf": {
+   "n_estimators": 100
+  },
+  "xgb": {
+   "n_estimators": 100,
+   "max_depth": 6,
+   "learning_rate": 0.1
+  },
+  "hybrid": {
+   "epochs": 20,
+   "batch_size": 256,
+   "lr": 0.001
+  }
+ },
+ "device": "cuda",
+ "git_commit": "7bedc6a",
+ "versions": {
+  "sklearn": "1.9.1",
+  "xgboost": "3.2.0",
+  "torch": "2.11.0+cu128",
+  "numpy": "2.4.6"
+ }
+}

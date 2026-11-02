@@ -9,6 +9,7 @@ import LiveMonitor from "./views/LiveMonitor.jsx";
 import RocAuc from "./views/RocAuc.jsx";
 import PerClass from "./views/PerClass.jsx";
 import Mitigation from "./views/Mitigation.jsx";
+import AttackDemo from "./views/AttackDemo.jsx";
 
 export default function App() {
   useEffect(() => {
@@ -31,6 +32,7 @@ export default function App() {
               <Route path="/roc" element={<RocAuc />} />
               <Route path="/classes" element={<PerClass />} />
               <Route path="/mitigation" element={<Mitigation />} />
+              <Route path="/demo" element={<AttackDemo />} />
               <Route path="*" element={<Navigate to="/performance" replace />} />
             </Routes>
           </div>
