@@ -126,6 +126,7 @@ python run_phase2.py
 Full interactive SOC dashboard and two-laptop live attack/mitigation pipeline.
 See `docs/DEMO_RUNBOOK.md` for the two-laptop setup and `docs/PHASE3_INTEGRATION.md`
 for how Phase 3 was integrated and how to run everything.
+Arduino UNO Q edition (model + kernel firewall on the board): see `docs/ARDUINO_UNOQ_DEMO.md`.
 
 ```bash
 # 0. Install Phase 3 deps

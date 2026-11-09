@@ -33,7 +33,8 @@ const REMOTE_IDLE_MS = 4000; // a remote attack ends once its device stops sendi
 // The live detector server (scripts/detector_server.py) runs the real model on the
 // same host, port 8000. The dashboard subscribes to it and tells it which IPs to refuse.
 const DETECTOR =
-  typeof location !== "undefined" ? `${location.protocol}//${location.hostname}:8000` : "http://localhost:8000";
+  import.meta.env.VITE_DETECTOR_URL ||
+  (typeof location !== "undefined" ? `${location.protocol}//${location.hostname}:8000` : "http://localhost:8000");
 const bridge = (action, ip) =>
   fetch(`${DETECTOR}/api/${action}`, { method: "POST", body: JSON.stringify(ip ? { ip } : {}) }).catch(() => {});
 const now = () => Date.now();
@@ -105,7 +106,7 @@ class Feed {
 
   onBridge(msg) {
     if (msg.type === "hello") {
-      this.bridgeInfo = { up: true, host: msg.host, ips: msg.ips };
+      this.bridgeInfo = { up: true, host: msg.host, board: msg.board, ips: msg.ips, arch: msg.arch, enforce: msg.enforce };
       msg.devices.forEach((d) => this.devices.set(d.ip, d));
     } else if (msg.type === "connect") {
       this.devices.set(msg.device.ip, msg.device);
@@ -167,7 +168,7 @@ class Feed {
       const pkt = {
         id: this.packetSeq++, ts: now(), src: ip, dst: VICTIM,
         srcPort: rint(1024, 65535), dstPort: pick([80, 443, 53, 1883, 502]),
-        proto: "live", length: 0, cls: r.cls, truth: cls,
+        proto: "live", length: 0, cls: r.cls, truth: msg.source === "live" ? undefined : cls,
         label: (THREAT[r.cls] || {}).label, confidence: r.conf, action: "—",
       };
       d.sent += 1;
@@ -431,8 +432,10 @@ class Feed {
   _track(pkt) {
     this.stats.total += 1;
     if (pkt.state) return;
-    this.stats.inspected += 1;
-    if (pkt.truth !== undefined && pkt.truth === pkt.cls) this.stats.correct += 1;
+    if (pkt.truth !== undefined) {
+      this.stats.inspected += 1;
+      if (pkt.truth === pkt.cls) this.stats.correct += 1;
+    }
     this.stats.byClass[pkt.cls] += 1;
     if (pkt.cls !== 0) this.stats.threats += 1;
     let c = this.connections.get(pkt.src);

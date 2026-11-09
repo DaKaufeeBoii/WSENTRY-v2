@@ -143,15 +143,7 @@ def load_wsn(path="data/raw/WSN-DS.csv", max_rows=200000, mode="native"):
 
 # ===================== CIC-IoT =====================
 
-def load_cic(path="data/raw/IoT_Intrusion.csv", max_rows=200000, mode="native"):
-    path = _resolve_data_path(path)
-    df = pd.read_csv(path)
-    if max_rows:
-        df = _stratified_sample(df, "label", max_rows, min_per_class=200)
-    df["threat_class"] = df["label"].map(CIC_LABEL_MAP)
-    df = df.dropna(subset=["threat_class"])
-    df["threat_class"] = df["threat_class"].astype(int)
-
+def cic_behavioral(df):
     duration = df["Duration"].replace(0, 1).astype(float)
     number = df["Number"].replace(0, 1).astype(float)
 
@@ -177,9 +169,22 @@ def load_cic(path="data/raw/IoT_Intrusion.csv", max_rows=200000, mode="native"):
         "f_conn_state":      (df["syn_flag_number"] + df["ack_flag_number"]).astype(float),
         "f_mqtt_activity":   (df["DNS"] + df["DHCP"] + df["ARP"]).astype(float),
     })
+    return features.replace([np.inf, -np.inf], 0).fillna(0)
+
+
+def load_cic(path="data/raw/IoT_Intrusion.csv", max_rows=200000, mode="native"):
+    path = _resolve_data_path(path)
+    df = pd.read_csv(path)
+    if max_rows:
+        df = _stratified_sample(df, "label", max_rows, min_per_class=200)
+    df["threat_class"] = df["label"].map(CIC_LABEL_MAP)
+    df = df.dropna(subset=["threat_class"])
+    df["threat_class"] = df["threat_class"].astype(int)
+
+    features = cic_behavioral(df)
     features["threat_class"] = df["threat_class"].values
     features["dataset"] = "cic"
-    return features.replace([np.inf, -np.inf], 0).fillna(0)
+    return features
 
 
 # ===================== Edge-IIoT =====================

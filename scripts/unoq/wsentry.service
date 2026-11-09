@@ -1,0 +1,16 @@
+[Unit]
+Description=W-SENTRY Wireless Intrusion Detection System
+After=network.target
+
+[Service]
+Type=simple
+User=root
+WorkingDirectory=/home/arduino/w-sentry
+ExecStart=/home/arduino/w-sentry/.venv/bin/python scripts/detector_server.py --enforce iptables --threads 4
+Restart=on-failure
+RestartSec=3
+KillSignal=SIGTERM
+TimeoutStopSec=5
+
+[Install]
+WantedBy=multi-user.target

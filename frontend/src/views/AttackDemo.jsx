@@ -65,10 +65,10 @@ function NetworkLink({ s }) {
           <div className="text-[11px] uppercase tracking-wide text-faint">This device (W-SENTRY)</div>
           <div className="flex items-center gap-2 mt-1.5">
             <span className="w-2.5 h-2.5 rounded-full" style={{ background: b.up ? C.good : C.bad }} />
-            <span className="text-[14px] font-semibold">{b.host || "detector"}</span>
+            <span className="text-[14px] font-semibold">{b.board || b.host || "detector"}</span>
           </div>
           <div className="font-mono text-[13px] mt-1">{(b.ips || []).join(" · ") || "—"}</div>
-          <div className="text-[12px] text-faint mt-1">{b.up ? "live model server on port 8000" : "model server offline — start detector_server.py"}</div>
+          <div className="text-[12px] text-faint mt-1">{b.up ? `live model on ${b.board || b.host || "detector"}${b.arch ? ` (${b.arch})` : ""} · ${b.enforce === "iptables" ? "kernel firewall" : "dry-run firewall"}` : "model server offline — start detector_server.py"}</div>
         </div>
         <div>
           <div className="text-[11px] uppercase tracking-wide text-faint">Connected devices</div>
